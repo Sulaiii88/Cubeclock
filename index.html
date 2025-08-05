@@ -1,28 +1,18 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <!-- Zeichencodierung -->
-    <meta charset="UTF-8" />
-    <title>Zeitwürfel</title>
-
-    <!-- Google Font: Space Mono für digitalen Look -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap"
-      rel="stylesheet"
-    />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- PWA-Integration -->
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#000000" />
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js");
-      }
-    </script>
-
-   <style>
-    /* === Grundlayout der Seite === */
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CubeClock</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+  <style>
     body {
       margin: 0;
       background: #000;
@@ -32,17 +22,18 @@
       align-items: center;
       height: 100vh;
       font-family: 'Space Mono', monospace;
+      overflow: hidden;
     }
 
     .scene {
-      width: 300px;
-      height: 300px;
+      width: 80vmin;
+      height: 80vmin;
       perspective: 1000px;
     }
 
     .cube {
-      width: 300px;
-      height: 300px;
+      width: 100%;
+      height: 100%;
       position: relative;
       transform-style: preserve-3d;
       transition: transform 1s ease;
@@ -51,22 +42,17 @@
 
     .face {
       position: absolute;
-      width: 300px;
-      height: 300px;
+      width: 100%;
+      height: 100%;
       background: linear-gradient(to bottom right, #000, #111);
       color: #fff;
-      font-size: 260px;
+      font-size: 22vmin;
       letter-spacing: -5px;
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 1px solid #424141;
+      border: 1px solid #444;
       backface-visibility: hidden;
-    }
-
-    .scene, .cube, .face {
-      user-select: none;
-      outline: none;
     }
 
     #hours   { color: #e71f1b; }
@@ -74,26 +60,21 @@
     #seconds { color: #fff275; }
     #year    { color: #4B0082; }
     #day     { color: #87c8fa; }
+    #month   { color: #2f4fba; font-weight: bold; }
 
-    #month {
-      color: #2f4fba;
-      font-size: 175px;
-      font-family: 'Space Mono', monospace;
-      font-weight: bold;
-    }
-
-    .front  { transform: rotateY( 90deg) translateZ(150px) rotateY(180deg) rotateX(180deg); }
-    .back   { transform: rotateY(180deg) translateZ(150px) rotateY(180deg) rotateX(180deg); }
-    .right  { transform: rotateY(0deg) translateZ(150px); }
-    .left   { transform: rotateY(-90deg) translateZ(150px); }
-    .top    { transform: rotateX(90deg) translateZ(150px); }
-    .bottom { transform: rotateX(-90deg) translateZ(150px); }
+    .front  { transform: rotateY(90deg) translateZ(40vmin) rotateY(180deg) rotateX(180deg); }
+    .back   { transform: rotateY(180deg) translateZ(40vmin) rotateY(180deg) rotateX(180deg); }
+    .right  { transform: rotateY(0deg) translateZ(40vmin); }
+    .left   { transform: rotateY(-90deg) translateZ(40vmin); }
+    .top    { transform: rotateX(90deg) translateZ(40vmin); }
+    .bottom { transform: rotateX(-90deg) translateZ(40vmin); }
 
     button {
       position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       background: transparent;
-      margin-top: 600px;
-      padding: 1px 120px;
       border: none;
       outline: none;
       box-shadow: none;
@@ -107,105 +88,50 @@
     }
 
     button img {
-      width: 30px;
+      width: 40px;
       height: auto;
       display: block;
     }
-
-    @media (max-width: 600px) {
-      .scene, .cube, .face {
-        width: 150px;
-        height: 150px;
-      }
-
-      .face {
-        font-size: 110px;
-      }
-
-      button {
-        font-size: 14px;
-        padding: 8px 16px;
-      }
-    }
   </style>
 </head>
-
 <body>
-  <!-- Würfel-Szene mit 6 Flächen -->
   <div class="scene">
     <div class="cube" id="cube">
       <div class="face front" id="year">00</div>
-      <div class="face back"  id="month">00</div>
+      <div class="face back" id="month">00</div>
       <div class="face right" id="seconds">00</div>
-      <div class="face left"  id="minutes">00</div>
-      <div class="face top"   id="hours">00</div>
+      <div class="face left" id="minutes">00</div>
+      <div class="face top" id="hours">00</div>
       <div class="face bottom" id="day">00</div>
     </div>
   </div>
 
-  <!-- Button zum Umschalten zwischen Uhrzeit/Datum -->
-  <button id="toggleButton" onclick="toggleCube()">
+  <button onclick="toggleCube()">
     <img src="spacebar_icon.png" alt="Leertaste" />
   </button>
 
   <script>
-    // === Variablen zur Steuerung ===
     let showingDate = false;
+
+    function updateTime() {
+      const now = new Date();
+      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+      document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
+      document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
+      document.getElementById("year").textContent = (now.getFullYear() % 100).toString().padStart(2, '0');
+      document.getElementById("month").textContent = monthNames[now.getMonth()];
+      document.getElementById("day").textContent = now.getDate().toString().padStart(2, '0');
+    }
+
     let rotateX = -30;
     let rotateY = 45;
     let isDragging = false;
     let lastX, lastY;
     let userRotated = false;
     let inactivityTimer;
-    let toggleCount = 0;
-
     const cube = document.getElementById("cube");
-    const toggleButton = document.getElementById("toggleButton");
 
-    // === Uhrzeit & Datum aktualisieren ===
-    function updateTime() {
-      const now = new Date();
-      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-
-      document.getElementById("hours").textContent   = now.getHours().toString().padStart(2, '0');
-      document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
-      document.getElementById("year").textContent     = (now.getFullYear() % 100).toString().padStart(2, '0');
-      document.getElementById("month").textContent    = monthNames[now.getMonth()];
-      document.getElementById("day").textContent      = now.getDate().toString().padStart(2, '0');
-    }
-
-    // === Ansicht umschalten und Klicks zählen ===
-    function toggleCube() {
-      toggleCount++;
-      if (toggleCount >= 2) {
-        toggleButton.style.display = "none";
-      }
-
-      showingDate = !showingDate;
-      rotateX = showingDate ? -215 : -30;
-      rotateY = 45;
-      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    }
-
-    // === Automatisch zurück zur Uhrzeitansicht ===
-    function resetToClockView() {
-      if (showingDate || userRotated) {
-        showingDate = false;
-        userRotated = false;
-        rotateX = -30;
-        rotateY = 45;
-        cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      }
-    }
-
-    // === Timer für Inaktivität starten/zurücksetzen ===
-    function startInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(resetToClockView, 5000);
-    }
-
-    // === Benutzer bewegt Würfel mit der Maus ===
     cube.addEventListener("mousedown", (e) => {
       isDragging = true;
       lastX = e.clientX;
@@ -218,33 +144,48 @@
 
     document.addEventListener("mousemove", (e) => {
       if (!isDragging) return;
-
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       lastX = e.clientX;
       lastY = e.clientY;
-
       rotateY += dx * 0.5;
       rotateX -= dy * 0.5;
-
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
       userRotated = true;
       startInactivityTimer();
     });
 
-    // === Space-Taste zum Umschalten verwenden ===
+    function toggleCube() {
+      showingDate = !showingDate;
+      rotateX = showingDate ? -215 : -30;
+      rotateY = 45;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    }
+
+    function resetToClockView() {
+      if (showingDate || userRotated) {
+        showingDate = false;
+        userRotated = false;
+        rotateX = -30;
+        rotateY = 45;
+        cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      }
+    }
+
+    function startInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(resetToClockView, 10000);
+    }
+
+    setInterval(updateTime, 1000);
+    updateTime();
+
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
         e.preventDefault();
         toggleCube();
       }
     });
-
-    // === Uhrzeit kontinuierlich aktualisieren ===
-    setInterval(updateTime, 1000);
-    updateTime();
   </script>
 </body>
 </html>
-
