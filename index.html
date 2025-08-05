@@ -1,17 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CubeClock</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#000000" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -26,8 +22,8 @@
     }
 
     .scene {
-      width: 80vmin;
-      height: 80vmin;
+      width: 90vmin;
+      height: 90vmin;
       perspective: 1000px;
     }
 
@@ -46,40 +42,43 @@
       height: 100%;
       background: linear-gradient(to bottom right, #000, #111);
       color: #fff;
-      font-size: 22vmin;
-      letter-spacing: -5px;
+      font-size: 25vmin;
+      font-weight: bold;
+      letter-spacing: -0.5vmin;
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 1px solid #444;
+      border: 1px solid #555;
       backface-visibility: hidden;
     }
 
-    #hours   { color: #e71f1b; }
+    #hours { color: #e71f1b; }
     #minutes { color: #ff8c42; }
     #seconds { color: #fff275; }
-    #year    { color: #4B0082; }
-    #day     { color: #87c8fa; }
-    #month   { color: #2f4fba; font-weight: bold; }
+    #year { color: #4B0082; }
+    #day { color: #87c8fa; }
+    #month {
+      color: #2f4fba;
+      font-size: 18vmin;
+    }
 
-    .front  { transform: rotateY(90deg) translateZ(40vmin) rotateY(180deg) rotateX(180deg); }
-    .back   { transform: rotateY(180deg) translateZ(40vmin) rotateY(180deg) rotateX(180deg); }
-    .right  { transform: rotateY(0deg) translateZ(40vmin); }
-    .left   { transform: rotateY(-90deg) translateZ(40vmin); }
-    .top    { transform: rotateX(90deg) translateZ(40vmin); }
-    .bottom { transform: rotateX(-90deg) translateZ(40vmin); }
+    .front  { transform: rotateY( 90deg) translateZ(45vmin) rotateY(180deg) rotateX(180deg); } /* Jahr */
+    .back   { transform: rotateY(180deg) translateZ(45vmin) rotateY(180deg) rotateX(180deg); } /* Monat */
+    .right  { transform: rotateY(  0deg) translateZ(45vmin); }  /* Sekunde */
+    .left   { transform: rotateY(-90deg) translateZ(45vmin); }  /* Minute */
+    .top    { transform: rotateX( 90deg) translateZ(45vmin); }  /* Stunde */
+    .bottom { transform: rotateX(-90deg) translateZ(45vmin); }  /* Tag */
 
     button {
       position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 5vh;
       background: transparent;
+      padding: 5px 80px;
       border: none;
       outline: none;
       box-shadow: none;
-      border-radius: 10px;
       background-color: #444;
+      border-radius: 10px;
       cursor: pointer;
     }
 
@@ -88,7 +87,7 @@
     }
 
     button img {
-      width: 40px;
+      width: 30px;
       height: auto;
       display: block;
     }
@@ -98,10 +97,10 @@
   <div class="scene">
     <div class="cube" id="cube">
       <div class="face front" id="year">00</div>
-      <div class="face back" id="month">00</div>
+      <div class="face back"  id="month">00</div>
       <div class="face right" id="seconds">00</div>
-      <div class="face left" id="minutes">00</div>
-      <div class="face top" id="hours">00</div>
+      <div class="face left"  id="minutes">00</div>
+      <div class="face top"   id="hours">00</div>
       <div class="face bottom" id="day">00</div>
     </div>
   </div>
@@ -112,18 +111,6 @@
 
   <script>
     let showingDate = false;
-
-    function updateTime() {
-      const now = new Date();
-      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-      document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
-      document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
-      document.getElementById("year").textContent = (now.getFullYear() % 100).toString().padStart(2, '0');
-      document.getElementById("month").textContent = monthNames[now.getMonth()];
-      document.getElementById("day").textContent = now.getDate().toString().padStart(2, '0');
-    }
-
     let rotateX = -30;
     let rotateY = 45;
     let isDragging = false;
@@ -132,17 +119,48 @@
     let inactivityTimer;
     const cube = document.getElementById("cube");
 
-    cube.addEventListener("mousedown", (e) => {
+    const updateTime = () => {
+      const now = new Date();
+      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+      document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
+      document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
+      document.getElementById("year").textContent = (now.getFullYear() % 100).toString().padStart(2, '0');
+      document.getElementById("month").textContent = monthNames[now.getMonth()];
+      document.getElementById("day").textContent = now.getDate().toString().padStart(2, '0');
+    };
+
+    const toggleCube = () => {
+      showingDate = !showingDate;
+      rotateX = showingDate ? -215 : -30;
+      rotateY = 45;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    };
+
+    const resetToClockView = () => {
+      if (showingDate || userRotated) {
+        showingDate = false;
+        userRotated = false;
+        rotateX = -30;
+        rotateY = 45;
+        cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      }
+    };
+
+    const startInactivityTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(resetToClockView, 10000);
+    };
+
+    cube.addEventListener("mousedown", e => {
       isDragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
     });
 
-    document.addEventListener("mouseup", () => {
-      isDragging = false;
-    });
+    document.addEventListener("mouseup", () => isDragging = false);
 
-    document.addEventListener("mousemove", (e) => {
+    document.addEventListener("mousemove", e => {
       if (!isDragging) return;
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
@@ -155,37 +173,15 @@
       startInactivityTimer();
     });
 
-    function toggleCube() {
-      showingDate = !showingDate;
-      rotateX = showingDate ? -215 : -30;
-      rotateY = 45;
-      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    }
-
-    function resetToClockView() {
-      if (showingDate || userRotated) {
-        showingDate = false;
-        userRotated = false;
-        rotateX = -30;
-        rotateY = 45;
-        cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      }
-    }
-
-    function startInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(resetToClockView, 10000);
-    }
-
-    setInterval(updateTime, 1000);
-    updateTime();
-
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
+    window.addEventListener("keydown", e => {
+      if (e.code === "Space" && !e.target.matches("button, input, textarea")) {
         e.preventDefault();
         toggleCube();
       }
     });
+
+    updateTime();
+    setInterval(updateTime, 1000);
   </script>
 </body>
 </html>
