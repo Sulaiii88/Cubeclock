@@ -2,12 +2,23 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
+  <title>Zeitwürfel</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CubeClock</title>
+
+  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="spacebar_icon.png" type="image/png" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#000000" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
   <style>
+    /* === Grundlayout === */
     body {
       margin: 0;
       background: #000;
@@ -21,11 +32,9 @@
     }
 
     .scene {
-      width: 100vmin;
-      height: 100vmin;
-      max-width: 300px;
-      max-height: 300px;
-      perspective: 1000px;
+      width: 90vmin;
+      height: 90vmin;
+      perspective: 1200px;
     }
 
     .cube {
@@ -43,56 +52,70 @@
       height: 100%;
       background: linear-gradient(to bottom right, #000, #111);
       color: #fff;
-      font-size: 25vmin;
+      font-size: calc(90vmin / 1.5); /* skaliert automatisch */
       letter-spacing: -5px;
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 1px solid #666;
+      border: 1px solid #555;
       backface-visibility: hidden;
     }
 
-    /* Farben für Seiten */
+    .scene, .cube, .face {
+      user-select: none;
+      outline: none;
+    }
+
     #hours   { color: #e71f1b; }
     #minutes { color: #ff8c42; }
     #seconds { color: #fff275; }
     #year    { color: #4B0082; }
     #day     { color: #87c8fa; }
-    #month   { color: #2f4fba; font-weight: bold; font-size: 18vmin; }
+    #month {
+      color: #2f4fba;
+      font-size: calc(90vmin / 2);
+      font-weight: bold;
+    }
 
-    /* Seiten-Positionen */
-    .front  { transform: rotateY( 90deg) translateZ(50%); rotateY(180deg) rotateX(180deg); } /* Jahr */
-    .back   { transform: rotateY(180deg) translateZ(50%) rotateY(180deg) rotateX(180deg); }  /* Monat */
-    .right  { transform: rotateY(  0deg) translateZ(50%); }  /* Sekunde */
-    .left   { transform: rotateY(-90deg) translateZ(50%); }  /* Minute */
-    .top    { transform: rotateX( 90deg) translateZ(50%); }  /* Stunde */
-    .bottom { transform: rotateX(-90deg) translateZ(50%); }  /* Tag */
+    .front  { transform: rotateY( 90deg) translateZ(45vmin) rotateY(180deg) rotateX(180deg); }
+    .back   { transform: rotateY(180deg) translateZ(45vmin) rotateY(180deg) rotateX(180deg); }
+    .right  { transform: rotateY(0deg) translateZ(45vmin); }
+    .left   { transform: rotateY(-90deg) translateZ(45vmin); }
+    .top    { transform: rotateX(90deg) translateZ(45vmin); }
+    .bottom { transform: rotateX(-90deg) translateZ(45vmin); }
 
-    /* Button – nur auf Mobilgeräten sichtbar */
     button {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      background: transparent;
+      position: absolute;
+      bottom: 5vh;
+      padding: 1px 100px;
       border: none;
       outline: none;
       box-shadow: none;
+      border-radius: 10px;
+      background-color: #444;
       cursor: pointer;
     }
 
-    button img {
-      width: 50px;
-      height: auto;
+    button:hover {
+      background-color: #666;
     }
 
-    @media (max-width: 768px) {
+    button img {
+      width: 30px;
+      height: auto;
+      display: block;
+    }
+
+    @media (max-width: 600px) {
       button {
-        display: block;
+        padding: 6px 80px;
       }
     }
   </style>
 </head>
+
 <body>
+  <!-- Würfel-Szene -->
   <div class="scene">
     <div class="cube" id="cube">
       <div class="face front" id="year">00</div>
@@ -104,8 +127,8 @@
     </div>
   </div>
 
-  <!-- Button (Spacebar Symbol) -->
-  <button onclick="toggleCube()">
+  <!-- Umschalt-Button -->
+  <button id="toggleButton" onclick="toggleCube()">
     <img src="spacebar_icon.png" alt="Leertaste" />
   </button>
 
@@ -117,12 +140,15 @@
     let lastX, lastY;
     let userRotated = false;
     let inactivityTimer;
+    let toggleCount = 0;
 
     const cube = document.getElementById("cube");
+    const toggleButton = document.getElementById("toggleButton");
 
     function updateTime() {
       const now = new Date();
       const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+
       document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
       document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
       document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
@@ -132,13 +158,16 @@
     }
 
     function toggleCube() {
+      toggleCount++;
+      if (toggleCount >= 2) {
+        toggleButton.style.display = "none";
+      }
       showingDate = !showingDate;
       rotateX = showingDate ? -215 : -30;
       rotateY = 45;
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     }
 
-    // Zurücksetzen zur Uhrzeit
     function resetToClockView() {
       if (showingDate || userRotated) {
         showingDate = false;
@@ -154,7 +183,6 @@
       inactivityTimer = setTimeout(resetToClockView, 10000);
     }
 
-    // Drag-Rotation
     cube.addEventListener("mousedown", (e) => {
       isDragging = true;
       lastX = e.clientX;
@@ -167,13 +195,17 @@
 
     document.addEventListener("mousemove", (e) => {
       if (!isDragging) return;
+
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       lastX = e.clientX;
       lastY = e.clientY;
+
       rotateY += dx * 0.5;
       rotateX -= dy * 0.5;
+
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
       userRotated = true;
       startInactivityTimer();
     });
@@ -185,8 +217,8 @@
       }
     });
 
-    updateTime();
     setInterval(updateTime, 1000);
+    updateTime();
   </script>
 </body>
 </html>
