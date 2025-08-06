@@ -3,12 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Zeitwürfel</title>
-
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- PWA manifest -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#000000" />
   <script>
@@ -18,7 +14,6 @@
   </script>
 
   <style>
-    /* === Grundlayout === */
     body {
       margin: 0;
       background: #000;
@@ -32,8 +27,8 @@
     }
 
     .scene {
-      width: 90vmin;
-      height: 90vmin;
+      width: 63vmin;
+      height: 63vmin;
       perspective: 1200px;
     }
 
@@ -52,7 +47,7 @@
       height: 100%;
       background: linear-gradient(to bottom right, #000, #111);
       color: #fff;
-      font-size: calc(90vmin / 1.5); /* skaliert automatisch */
+      font-size: calc(63vmin / 1.5);
       letter-spacing: -5px;
       display: flex;
       justify-content: center;
@@ -73,16 +68,16 @@
     #day     { color: #87c8fa; }
     #month {
       color: #2f4fba;
-      font-size: calc(90vmin / 2);
+      font-size: calc(63vmin / 2);
       font-weight: bold;
     }
 
-    .front  { transform: rotateY( 90deg) translateZ(45vmin) rotateY(180deg) rotateX(180deg); }
-    .back   { transform: rotateY(180deg) translateZ(45vmin) rotateY(180deg) rotateX(180deg); }
-    .right  { transform: rotateY(0deg) translateZ(45vmin); }
-    .left   { transform: rotateY(-90deg) translateZ(45vmin); }
-    .top    { transform: rotateX(90deg) translateZ(45vmin); }
-    .bottom { transform: rotateX(-90deg) translateZ(45vmin); }
+    .front  { transform: rotateY( 90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .back   { transform: rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .right  { transform: rotateY(0deg) translateZ(31.5vmin); }
+    .left   { transform: rotateY(-90deg) translateZ(31.5vmin); }
+    .top    { transform: rotateX(90deg) translateZ(31.5vmin); }
+    .bottom { transform: rotateX(-90deg) translateZ(31.5vmin); }
 
     button {
       position: absolute;
@@ -115,7 +110,6 @@
 </head>
 
 <body>
-  <!-- Würfel-Szene -->
   <div class="scene">
     <div class="cube" id="cube">
       <div class="face front" id="year">00</div>
@@ -127,7 +121,6 @@
     </div>
   </div>
 
-  <!-- Umschalt-Button -->
   <button id="toggleButton" onclick="toggleCube()">
     <img src="spacebar_icon.png" alt="Leertaste" />
   </button>
