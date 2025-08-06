@@ -66,6 +66,7 @@
     #seconds { color: #fff275; }
     #year    { color: #4B0082; }
     #day     { color: #87c8fa; }
+
     #month {
       color: #2f4fba;
       font-size: calc(63vmin / 2);
@@ -101,10 +102,29 @@
       display: block;
     }
 
-    @media (max-width: 600px) {
-      button {
-        padding: 6px 80px;
+    /* 📱 Handy bleibt bei 63vmin */
+
+    /* 💻 Auf größeren Geräten wird alles ~20 % kleiner */
+    @media (min-width: 601px) {
+      .scene {
+        width: 50vmin;
+        height: 50vmin;
       }
+
+      .face {
+        font-size: calc(50vmin / 1.5);
+      }
+
+      #month {
+        font-size: calc(50vmin / 2);
+      }
+
+      .front  { transform: rotateY( 90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .back   { transform: rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .right  { transform: rotateY(0deg) translateZ(25vmin); }
+      .left   { transform: rotateY(-90deg) translateZ(25vmin); }
+      .top    { transform: rotateX(90deg) translateZ(25vmin); }
+      .bottom { transform: rotateX(-90deg) translateZ(25vmin); }
     }
   </style>
 </head>
