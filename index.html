@@ -64,7 +64,7 @@
       outline: none;
     }
 
-    #hours   { color: #000000; }
+    #hours   { color: #e71f1b; }
     #minutes { color: #ff8c42; }
     #seconds { color: #fff275; }
     #year    { color: #4B0082; }
@@ -232,8 +232,8 @@
       const dy = touch.clientY - lastY;
       lastX = touch.clientX;
       lastY = touch.clientY;
-      rotateY += dx * 0.5;
-      rotateX -= dy * 0.5;
+      rotateY += dx * 1;
+      rotateX -= dy * 1;
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
       userRotated = true;
       startInactivityTimer();
@@ -251,6 +251,7 @@
   </script>
 </body>
 </html>
+
 
 
 
