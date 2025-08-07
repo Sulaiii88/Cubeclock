@@ -160,7 +160,16 @@
     const cube = document.getElementById("cube");
     const toggleButton = document.getElementById("toggleButton");
 
-
+    function updateTime() {
+      const now = new Date();
+      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+      document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
+      document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
+      document.getElementById("year").textContent = (now.getFullYear() % 100).toString().padStart(2, '0');
+      document.getElementById("month").textContent = monthNames[now.getMonth()];
+      document.getElementById("day").textContent = now.getDate().toString().padStart(2, '0');
+    }
 
     function toggleCube() {
       toggleCount++;
@@ -242,6 +251,7 @@
   </script>
 </body>
 </html>
+
 
 
 
