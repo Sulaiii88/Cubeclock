@@ -1,5 +1,5 @@
 {
-  "name": "CubeClock_PWA",
+  "name": "CubeClock",
   "short_name": "CubeClock",
   "start_url": "index.html?v=4",   // <— gleiche Zahl wie CACHE_VERSION
   "display": "standalone",
