@@ -128,27 +128,29 @@
       .top    { transform: rotateX(90deg) translateZ(25vmin); }
       .bottom { transform: rotateX(-90deg) translateZ(25vmin); }
     }
-/* ✅ Nur PWA auf kleinen Geräten (Handy-App) */
+
+
+    /* ✅ Nur PWA auf kleinen Geräten (Handy-App) */
 @media (display-mode: standalone) and (max-width: 600px) {
   .scene {
-    width: 75vmin;
-    height: 75vmin;
+    width: 200vmin;
+    height: 200vmin;
   }
 
   .face {
-    font-size: calc(75vmin / 1.5);
+    font-size: calc(200vmin / 1.5);
   }
 
   #month {
-    font-size: calc(75vmin / 2);
+    font-size: calc(200vmin / 2);
   }
 
-  .front  { transform: rotateY( 90deg) translateZ(37.5vmin) rotateY(180deg) rotateX(180deg); }
-  .back   { transform: rotateY(180deg) translateZ(37.5vmin) rotateY(180deg) rotateX(180deg); }
-  .right  { transform: rotateY(0deg) translateZ(37.5vmin); }
-  .left   { transform: rotateY(-90deg) translateZ(37.5vmin); }
-  .top    { transform: rotateX(90deg) translateZ(37.5vmin); }
-  .bottom { transform: rotateX(-90deg) translateZ(37.5vmin); }
+  .front  { transform: rotateY( 90deg) translateZ(100vmin) rotateY(180deg) rotateX(180deg); }
+  .back   { transform: rotateY(180deg) translateZ(100vmin) rotateY(180deg) rotateX(180deg); }
+  .right  { transform: rotateY(0deg) translateZ(100vmin); }
+  .left   { transform: rotateY(-90deg) translateZ(100vmin); }
+  .top    { transform: rotateX(90deg) translateZ(100vmin); }
+  .bottom { transform: rotateX(-90deg) translateZ(100vmin); }
 }
 
   
@@ -263,6 +265,7 @@
 
 </body>
 </html>
+
 
 
 
