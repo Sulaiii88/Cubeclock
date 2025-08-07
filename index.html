@@ -130,28 +130,12 @@
     }
 
 
-/* ✅ Nur PWA auf kleinen Geräten (Handy-App) */
-@media (display-mode: standalone) and (max-width: 600px) {
-  .scene {
-    width: 1000vmin;
-    height: 1000vmin;
-  }
-
-  .face {
-    font-size: calc(1000vmin / 1.5);
-  }
-
-  #month {
-    font-size: calc(1000vmin / 2);
-  }
-
-  .front  { transform: rotateY(90deg) translateZ(500vmin) rotateY(180deg) rotateX(180deg); }
-  .back   { transform: rotateY(180deg) translateZ(500vmin) rotateY(180deg) rotateX(180deg); }
-  .right  { transform: rotateY(0deg) translateZ(500vmin); }
-  .left   { transform: rotateY(-90deg) translateZ(500vmin); }
-  .top    { transform: rotateX(90deg) translateZ(500vmin); }
-  .bottom { transform: rotateX(-90deg) translateZ(500vmin); }
-}
+ /* 📱 Nur in installierter App (PWA) auf Handy – größer durch Skalierung */
+    @media (display-mode: standalone) and (max-width: 600px) {
+      .scene {
+        transform: scale(1.8); /* ← skaliert visuell, ohne Layout zu brechen */
+      }
+    }
 
   
   </style>
@@ -265,6 +249,7 @@
 
 </body>
 </html>
+
 
 
 
