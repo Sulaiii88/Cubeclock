@@ -1,1 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zeitwürfel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none; /* wichtig für Touchsteuerung */
+    }
+
+    .scene {
+      width: 63vmin;
+      height: 63vmin;
+      perspective: 1100px;
+      margin-bottom: 90px;
+    }
+
+    .cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1s ease;
+      transform: rotateX(-30deg) rotateY(45deg);
+    }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom right, #000, #111);
+      color: #fff;
+      font-size: calc(63vmin / 1.5);
+      letter-spacing: -5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #555;
+      backface-visibility: hidden;
+    }
+
+    .scene, .cube, .face {
+      user-select: none;
+      outline: none;
+    }
+
+    #hours   { color: #e71f1b; }
+    #minutes { color: #ff8c42; }
+    #seconds { color: #fff275; }
+    #year    { color: #4B0082; }
+    #day     { color: #87c8fa; }
+    #month {
+      color: #2f4fba;
+      font-size: calc(63vmin / 2);
+      font-weight: bold;
+    }
+
+    .front  { transform: rotateY(90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .back   { transform: rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .right  { transform: rotateY(0deg) translateZ(31.5vmin); }
+    .left   { transform: rotateY(-90deg) translateZ(31.5vmin); }
+    .top    { transform: rotateX(90deg) translateZ(31.5vmin); }
+    .bottom { transform: rotateX(-90deg) translateZ(31.5vmin); }
+
+    button {
+      position: absolute;
+      bottom: 5vh;
+      padding: 1px 100px;
+      border: none;
+      outline: none;
+      box-shadow: none;
+      border-radius: 10px;
+      background-color: #444;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #666;
+    }
+
+    button img {
+      width: 30px;
+      height: auto;
+      display: block;
+    }
+
+    @media (min-width: 601px) {
+      .scene {
+        width: 50vmin;
+        height: 50vmin;
+      }
+      .face {
+        font-size: calc(50vmin / 1.5);
+      }
+      #month {
+        font-size: calc(50vmin / 2);
+      }
+      .front  { transform: rotateY(90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .back   { transform: rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .right  { transform: rotateY(0deg) translateZ(25vmin); }
+      .left   { transform: rotateY(-90deg) translateZ(25vmin); }
+      .top    { transform: rotateX(90deg) translateZ(25vmin); }
+      .bottom { transform: rotateX(-90deg) translateZ(25vmin); }
+    }
+
+    @media (display-mode: standalone) and (max-width: 600px) {
+      .scene {
+        transform: scale(3);
+        transform-origin: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="cube" id="cube">
+      <div class="face front" id="year">00</div>
+      <div class="face back" id="month">00</div>
+      <div class="face right" id="seconds">00</div>
+      <div class="face left" id="minutes">00</div>
+      <div class="face top" id="hours">00</div>
+      <div class="face bottom" id="day">00</div>
+    </div>
+  </div>
+
+  <button id="toggleButton" onclick="toggleCube()">
+    <img src="spacebar_icon.png" alt="Leertaste" />
+  </button>
+
+  <script>
+    let showingDate = false;
+    let rotateX = -30;
+    let rotateY = 45;
+    let isDragging = false;
+    let lastX, lastY;
+    let userRotated = false;
+    let inactivityTimer;
+    let toggleCount = 0;
+
+    const cube = document.getElementById("cube");
+    const toggleButton = document.getElementById("toggleButton");
+
+
+
+    function toggleCube() {
+      toggleCount++;
+      if (toggleCount >= 2) toggleButton.style.display = "none";
+      showingDate = !showingDate;
+      rotateX = showingDate ? -215 : -30;
+      rotateY = 45;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    }
+
+    function resetToClockView() {
+      if (showingDate || userRotated) {
+        showingDate = false;
+        userRotated = false;
+        rotateX = -30;
+        rotateY = 45;
+        cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      }
+    }
+
+    function startInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(resetToClockView, 10000);
+    }
+
+    cube.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      rotateY += dx * 0.5;
+      rotateX -= dy * 0.5;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      userRotated = true;
+      startInactivityTimer();
+    });
+
+    // ✅ NEU: Touch-Unterstützung für PWA
+    document.body.addEventListener("touchstart", (e) => {
+      const touch = e.touches[0];
+      lastX = touch.clientX;
+      lastY = touch.clientY;
+    });
+
+    document.body.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const dx = touch.clientX - lastX;
+      const dy = touch.clientY - lastY;
+      lastX = touch.clientX;
+      lastY = touch.clientY;
+      rotateY += dx * 0.5;
+      rotateX -= dy * 0.5;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      userRotated = true;
+      startInactivityTimer();
+    }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
+        e.preventDefault();
+        toggleCube();
+      }
+    });
+
+    setInterval(updateTime, 1000);
+    updateTime();
+  </script>
+</body>
+</html>
+
+
+
+
+
 
