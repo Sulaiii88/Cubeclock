@@ -153,113 +153,139 @@
     <img src="spacebar_icon.png" alt="Leertaste" />
   </button>
 
-  <script>
-    let showingDate = false;
-    let rotateX = -30;
-    let rotateY = 45;
-    let isDragging = false;
-    let lastX, lastY;
-    let userRotated = false;
-    let inactivityTimer;
-    let toggleCount = 0;
+ <script>
+  let showingDate = false;
+  let rotateX = -30;
+  let rotateY = 45;
+  let isDragging = false;
+  let lastX, lastY;
+  let velocityX = 0;
+  let velocityY = 0;
+  let userRotated = false;
+  let inactivityTimer;
+  let toggleCount = 0;
+  let momentumActive = false;
 
-    const cube = document.getElementById("cube");
-    const toggleButton = document.getElementById("toggleButton");
+  const cube = document.getElementById("cube");
+  const toggleButton = document.getElementById("toggleButton");
 
-    function updateTime() {
-      const now = new Date();
-      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+  function updateTime() {
+    const now = new Date();
+    const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+    document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
+    document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
+    document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
+    document.getElementById("year").textContent = (now.getFullYear() % 100).toString().padStart(2, '0');
+    document.getElementById("month").textContent = monthNames[now.getMonth()];
+    document.getElementById("day").textContent = now.getDate().toString().padStart(2, '0');
+  }
 
-      document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
-      document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
-      document.getElementById("year").textContent = (now.getFullYear() % 100).toString().padStart(2, '0');
-      document.getElementById("month").textContent = monthNames[now.getMonth()];
-      document.getElementById("day").textContent = now.getDate().toString().padStart(2, '0');
-    }
+  function toggleCube() {
+    toggleCount++;
+    if (toggleCount >= 2) toggleButton.style.display = "none";
+    showingDate = !showingDate;
+    rotateX = showingDate ? -215 : -30;
+    rotateY = 45;
+    cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+  }
 
-    function toggleCube() {
-      toggleCount++;
-      if (toggleCount >= 2) {
-        toggleButton.style.display = "none";
-      }
-      showingDate = !showingDate;
-      rotateX = showingDate ? -215 : -30;
+  function resetToClockView() {
+    if (showingDate || userRotated) {
+      showingDate = false;
+      userRotated = false;
+      rotateX = -30;
       rotateY = 45;
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     }
+  }
 
-    function resetToClockView() {
-      if (showingDate || userRotated) {
-        showingDate = false;
-        userRotated = false;
-        rotateX = -30;
-        rotateY = 45;
-        cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      }
+  function startInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(resetToClockView, 10000);
+  }
+
+  // === 🌀 Momentum-Logik ===
+  function applyMomentum() {
+    if (!momentumActive) return;
+    velocityX *= 0.95;
+    velocityY *= 0.95;
+
+    rotateY += velocityX;
+    rotateX -= velocityY;
+
+    cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+    if (Math.abs(velocityX) > 0.1 || Math.abs(velocityY) > 0.1) {
+      requestAnimationFrame(applyMomentum);
+    } else {
+      momentumActive = false;
     }
+  }
 
-    function startInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(resetToClockView, 10000);
+  // === Drehen mit Maus & Touch (kombiniert) ===
+  function startDrag(x, y) {
+    isDragging = true;
+    lastX = x;
+    lastY = y;
+    velocityX = 0;
+    velocityY = 0;
+    momentumActive = false;
+  }
+
+  function dragMove(x, y) {
+    if (!isDragging) return;
+    const dx = x - lastX;
+    const dy = y - lastY;
+    lastX = x;
+    lastY = y;
+
+    velocityX = dx * 0.5;
+    velocityY = dy * 0.5;
+
+    rotateY += velocityX;
+    rotateX -= velocityY;
+    cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+    userRotated = true;
+    startInactivityTimer();
+  }
+
+  function endDrag() {
+    isDragging = false;
+    momentumActive = true;
+    requestAnimationFrame(applyMomentum);
+  }
+
+  // Maus
+  cube.addEventListener("mousedown", e => startDrag(e.clientX, e.clientY));
+  document.addEventListener("mousemove", e => dragMove(e.clientX, e.clientY));
+  document.addEventListener("mouseup", endDrag);
+
+  // Touch
+  cube.addEventListener("touchstart", e => {
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  }, { passive: true });
+
+  document.addEventListener("touchmove", e => {
+    const touch = e.touches[0];
+    dragMove(touch.clientX, touch.clientY);
+  }, { passive: true });
+
+  document.addEventListener("touchend", endDrag);
+
+  // Leertaste
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
+      e.preventDefault();
+      toggleCube();
     }
+  });
 
-    // === ROTATION mit MAUS & TOUCH ===
+  setInterval(updateTime, 1000);
+  updateTime();
+</script>
 
-    function startDrag(x, y) {
-      isDragging = true;
-      lastX = x;
-      lastY = y;
-    }
-
-    function dragMove(x, y) {
-      if (!isDragging) return;
-      const dx = x - lastX;
-      const dy = y - lastY;
-      lastX = x;
-      lastY = y;
-
-      rotateY += dx * 0.5;
-      rotateX -= dy * 0.5;
-
-      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-      userRotated = true;
-      startInactivityTimer();
-    }
-
-    function endDrag() {
-      isDragging = false;
-    }
-
-    // Maus
-    cube.addEventListener("mousedown", (e) => startDrag(e.clientX, e.clientY));
-    document.addEventListener("mousemove", (e) => dragMove(e.clientX, e.clientY));
-    document.addEventListener("mouseup", endDrag);
-
-    // Touch
-    cube.addEventListener("touchstart", (e) => {
-      const touch = e.touches[0];
-      startDrag(touch.clientX, touch.clientY);
-    }, { passive: true });
-
-    document.addEventListener("touchmove", (e) => {
-      const touch = e.touches[0];
-      dragMove(touch.clientX, touch.clientY);
-    }, { passive: true });
-
-    document.addEventListener("touchend", endDrag);
-
-    // Leertaste
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
-        e.preventDefault();
-        toggleCube();
-      }
-    });
-
-    setInterval(updateTime, 1000);
-    updateTime();
-  </script>
 </body>
 </html>
+
