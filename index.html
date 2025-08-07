@@ -5,10 +5,10 @@
   <title>Zeitwürfel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
- <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
@@ -32,8 +32,7 @@
       width: 63vmin;
       height: 63vmin;
       perspective: 1100px;
-      margin-bottom: 90px; /* 🔼 Schiebt den Würfel nach oben */
-
+      margin-bottom: 90px;
     }
 
     .cube {
@@ -106,8 +105,6 @@
       display: block;
     }
 
-    /* 📱 Handy bleibt bei 63vmin */
-
     /* 💻 Auf größeren Geräten wird alles ~20 % kleiner */
     @media (min-width: 601px) {
       .scene {
@@ -129,6 +126,29 @@
       .left   { transform: rotateY(-90deg) translateZ(25vmin); }
       .top    { transform: rotateX(90deg) translateZ(25vmin); }
       .bottom { transform: rotateX(-90deg) translateZ(25vmin); }
+    }
+
+    /* 📱 Wenn als PWA gestartet → extra größer */
+    @media (display-mode: standalone) {
+      .scene {
+        width: 70vmin;
+        height: 70vmin;
+      }
+
+      .face {
+        font-size: calc(70vmin / 1.5);
+      }
+
+      #month {
+        font-size: calc(70vmin / 2);
+      }
+
+      .front  { transform: rotateY( 90deg) translateZ(35vmin) rotateY(180deg) rotateX(180deg); }
+      .back   { transform: rotateY(180deg) translateZ(35vmin) rotateY(180deg) rotateX(180deg); }
+      .right  { transform: rotateY(0deg) translateZ(35vmin); }
+      .left   { transform: rotateY(-90deg) translateZ(35vmin); }
+      .top    { transform: rotateX(90deg) translateZ(35vmin); }
+      .bottom { transform: rotateX(-90deg) translateZ(35vmin); }
     }
   </style>
 </head>
@@ -239,6 +259,3 @@
   </script>
 </body>
 </html>
-
-
-
