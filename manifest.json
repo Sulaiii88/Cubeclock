@@ -1,11 +1,27 @@
 {
   "name": "CubeClock",
   "short_name": "CubeClock",
-  "start_url": "index.html?v=4",   // <— gleiche Zahl wie CACHE_VERSION
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "orientation": "any",
   "icons": [
-    { "src": "spacebar_icon.png", "sizes": "192x192", "type": "image/png" }
+    {
+      "src": "spacebar_icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "spacebar_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "settings.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
