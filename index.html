@@ -14,7 +14,9 @@
       navigator.serviceWorker.register('sw.js');
     }
   </script>
+
   <style>
+    /* ====== dein bestehendes Layout ====== */
     body {
       margin: 0;
       background: #000;
@@ -59,21 +61,14 @@
       backface-visibility: hidden;
     }
 
-    .scene, .cube, .face {
-      user-select: none;
-      outline: none;
-    }
+    .scene, .cube, .face { user-select: none; outline: none; }
 
     #hours   { color: #e71f1b; }
     #minutes { color: #ff8c42; }
     #seconds { color: #fff275; }
     #year    { color: #4B0082; }
     #day     { color: #87c8fa; }
-    #month {
-      color: #2f4fba;
-      font-size: calc(63vmin / 2);
-      font-weight: bold;
-    }
+    #month { color: #2f4fba; font-size: calc(63vmin / 2); font-weight: bold; }
 
     .front  { transform: rotateY(90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
     .back   { transform: rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
@@ -93,28 +88,13 @@
       background-color: #444;
       cursor: pointer;
     }
-
-    button:hover {
-      background-color: #666;
-    }
-
-    button img {
-      width: 30px;
-      height: auto;
-      display: block;
-    }
+    button:hover { background-color: #666; }
+    button img { width: 30px; height: auto; display: block; }
 
     @media (min-width: 601px) {
-      .scene {
-        width: 50vmin;
-        height: 50vmin;
-      }
-      .face {
-        font-size: calc(50vmin / 1.5);
-      }
-      #month {
-        font-size: calc(50vmin / 2);
-      }
+      .scene { width: 50vmin; height: 50vmin; }
+      .face  { font-size: calc(50vmin / 1.5); }
+      #month { font-size: calc(50vmin / 2); }
       .front  { transform: rotateY(90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
       .back   { transform: rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
       .right  { transform: rotateY(0deg) translateZ(25vmin); }
@@ -124,11 +104,50 @@
     }
 
     @media (display-mode: standalone) and (max-width: 600px) {
-      .scene {
-        transform: scale(3);
-        transform-origin: center;
-      }
+      .scene { transform: scale(3); transform-origin: center; }
     }
+
+    /* ====== NEU: Styling für Zahnrad & Panel (nur Optik) ====== */
+    #settingsButton{
+      position:absolute; top:20px; left:20px; padding:8px;
+      background:#222; border:1px solid #3a3a3a; border-radius:12px;
+      box-shadow:0 4px 14px rgba(0,0,0,.35); cursor:pointer;
+      transition:transform .08s ease, background .2s ease, border-color .2s ease;
+    }
+    #settingsButton:hover{ background:#2a2a2a; border-color:#474747; }
+    #settingsButton:active{ transform:translateY(1px); }
+    #settingsButton img{ width:28px; height:auto; display:block; }
+
+    #settingsPanel{
+      display:none; position:absolute; top:72px; left:20px; z-index:100;
+      background:#1f1f1f; border:1px solid #2a2a2a; border-radius:16px;
+      padding:18px 16px 16px; color:#fff; min-width:240px;
+      box-shadow:0 10px 30px rgba(0,0,0,.45);
+    }
+    #settingsPanel h3{
+      margin:0 0 12px; font-size:20px; letter-spacing:.5px; color:#f2f2f2;
+      text-shadow:0 1px 0 rgba(0,0,0,.5);
+    }
+    #settingsPanel label{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      font-size:18px; line-height:1.2; margin:10px 0; color:#eaeaea;
+    }
+    #settingsPanel input[type="color"]{
+      width:56px; height:32px; padding:0; border:4px solid #fff; border-radius:6px; background:#000; cursor:pointer;
+      appearance:none; -webkit-appearance:none;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+    }
+    #settingsPanel input[type="color"]::-webkit-color-swatch-wrapper{ padding:0; border-radius:4px; }
+    #settingsPanel input[type="color"]::-webkit-color-swatch{ border:none; border-radius:4px; }
+
+    .standard-button{
+      display:block; width:100%; margin-top:12px; padding:10px 12px; border-radius:12px; border:1px solid #444;
+      background:#2b2b2b; color:#e8e8e8; font-size:16px; text-align:center;
+      box-shadow:inset 0 -2px 0 rgba(255,255,255,.05), 0 2px 8px rgba(0,0,0,.25);
+      transition:background .2s ease, transform .05s ease;
+    }
+    .standard-button:hover{ background:#3a3a3a; }
+    .standard-button:active{ transform:translateY(1px); }
   </style>
 </head>
 <body>
@@ -147,7 +166,30 @@
     <img src="spacebar_icon.png" alt="Leertaste" />
   </button>
 
+  <!-- NEU: Zahnrad -->
+  <button id="settingsButton">
+    <img src="settings.png" alt="Einstellungen" />
+  </button>
+
+  <!-- NEU: Panel -->
+  <div id="settingsPanel">
+    <h3>Farbe ändern</h3>
+    <label>Stunde:      <input type="color" id="colorHours"></label>
+    <label>Minute:      <input type="color" id="colorMinutes"></label>
+    <label>Sekunden:    <input type="color" id="colorSeconds"></label>
+    <label>Jahr:        <input type="color" id="colorYear"></label>
+    <label>Monat:       <input type="color" id="colorMonth"></label>
+    <label>Tag:         <input type="color" id="colorDay"></label>
+    <label>Würfel:      <input type="color" id="colorCube"></label>
+    <label>Hintergrund: <input type="color" id="colorBackground"></label>
+
+    <button class="standard-button" onclick="resetToDefaultColors()">Standardfarben</button>
+    <button class="standard-button" onclick="toggleCube()">Zeit/Datum(space)</button>
+    <button class="standard-button" onclick="closeSettings()">Schließen</button>
+  </div>
+
   <script>
+    /* ====== DEINE bestehende Logik (unverändert) ====== */
     let showingDate = false;
     let rotateX = -30;
     let rotateY = 45;
@@ -162,13 +204,13 @@
 
     function updateTime() {
       const now = new Date();
-      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-      document.getElementById("hours").textContent = now.getHours().toString().padStart(2, '0');
+      const monthNames = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+      document.getElementById("hours").textContent   = now.getHours().toString().padStart(2, '0');
       document.getElementById("minutes").textContent = now.getMinutes().toString().padStart(2, '0');
       document.getElementById("seconds").textContent = now.getSeconds().toString().padStart(2, '0');
-      document.getElementById("year").textContent = (now.getFullYear() % 100).toString().padStart(2, '0');
-      document.getElementById("month").textContent = monthNames[now.getMonth()];
-      document.getElementById("day").textContent = now.getDate().toString().padStart(2, '0');
+      document.getElementById("year").textContent    = (now.getFullYear() % 100).toString().padStart(2, '0');
+      document.getElementById("month").textContent   = monthNames[now.getMonth()];
+      document.getElementById("day").textContent     = now.getDate().toString().padStart(2, '0');
     }
 
     function toggleCube() {
@@ -182,10 +224,8 @@
 
     function resetToClockView() {
       if (showingDate || userRotated) {
-        showingDate = false;
-        userRotated = false;
-        rotateX = -30;
-        rotateY = 45;
+        showingDate = false; userRotated = false;
+        rotateX = -30; rotateY = 45;
         cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
       }
     }
@@ -196,69 +236,104 @@
     }
 
     cube.addEventListener("mousedown", (e) => {
-      isDragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
+      isDragging = true; lastX = e.clientX; lastY = e.clientY;
     });
-
-    document.addEventListener("mouseup", () => {
-      isDragging = false;
-    });
-
+    document.addEventListener("mouseup", () => { isDragging = false; });
     document.addEventListener("mousemove", (e) => {
       if (!isDragging) return;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      rotateY += dx * 0.5;
-      rotateX -= dy * 0.5;
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      rotateY += dx * 0.5; rotateX -= dy * 0.5;
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      userRotated = true;
-      startInactivityTimer();
+      userRotated = true; startInactivityTimer();
     });
 
-    // ✅ NEU: Touch-Unterstützung für PWA
+    // Touch-Unterstützung
     document.body.addEventListener("touchstart", (e) => {
-      const touch = e.touches[0];
-      lastX = touch.clientX;
-      lastY = touch.clientY;
+      const t = e.touches[0]; lastX = t.clientX; lastY = t.clientY;
     });
-
     document.body.addEventListener("touchmove", (e) => {
       e.preventDefault();
-      const touch = e.touches[0];
-      const dx = touch.clientX - lastX;
-      const dy = touch.clientY - lastY;
-      lastX = touch.clientX;
-      lastY = touch.clientY;
-      rotateY += dx * 1;
-      rotateX -= dy * 1;
+      const t = e.touches[0];
+      const dx = t.clientX - lastX, dy = t.clientY - lastY;
+      lastX = t.clientX; lastY = t.clientY;
+      rotateY += dx * 1; rotateX -= dy * 1;
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      userRotated = true;
-      startInactivityTimer();
-    }, { passive: false });
+      userRotated = true; startInactivityTimer();
+    }, { passive:false });
 
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
-        e.preventDefault();
-        toggleCube();
+        e.preventDefault(); toggleCube();
       }
     });
 
     setInterval(updateTime, 1000);
     updateTime();
+
+    /* ====== NEU: Panel-Logik (nur UI/Colors) ====== */
+    const settingsButton = document.getElementById("settingsButton");
+    const settingsPanel  = document.getElementById("settingsPanel");
+    settingsButton.addEventListener("click", () => {
+      settingsPanel.style.display = settingsPanel.style.display === "none" ? "block" : "none";
+    });
+    function closeSettings(){ settingsPanel.style.display = "none"; }
+
+    const colorInputs = {
+      hours:"colorHours", minutes:"colorMinutes", seconds:"colorSeconds",
+      year:"colorYear", month:"colorMonth", day:"colorDay",
+      cube:"colorCube", background:"colorBackground"
+    };
+    const defaultColors = {
+      hours:"#e71f1b", minutes:"#ff8c42", seconds:"#fff275",
+      year:"#4B0082", month:"#2f4fba", day:"#87c8fa",
+      cube:"linear-gradient(to bottom right, #000, #111)", background:"#000000"
+    };
+
+    window.addEventListener('load', () => {
+      const firstVisit = !localStorage.getItem("visitedBefore");
+      if (firstVisit){ localStorage.setItem("visitedBefore","true"); resetToDefaultColors(); }
+      else { applySavedColors(); }
+    });
+
+    function applyColor(type, value){
+      if (type === "cube") {
+        document.querySelectorAll(".face").forEach(f => f.style.background = value);
+      } else if (type === "background") {
+        document.body.style.background = value;
+      } else {
+        document.getElementById(type).style.color = value;
+      }
+      localStorage.setItem(`color-${type}`, value);
+    }
+
+    for (const key in colorInputs){
+      document.getElementById(colorInputs[key]).addEventListener("input", e => {
+        applyColor(key, e.target.value);
+      });
+    }
+
+    function applySavedColors(){
+      for (const key in colorInputs){
+        const input = document.getElementById(colorInputs[key]);
+        const saved = localStorage.getItem(`color-${key}`);
+        const value = saved || (key === "cube" ? "#111111" : defaultColors[key]);
+
+        if (key === "cube") {
+          document.querySelectorAll(".face").forEach(f => f.style.background = value);
+        } else if (key === "background") {
+          document.body.style.background = value;
+        } else {
+          document.getElementById(key).style.color = value;
+        }
+        input.value = value;
+      }
+    }
+
+    function resetToDefaultColors(){
+      for (const key in colorInputs){ localStorage.removeItem(`color-${key}`); }
+      applySavedColors();
+    }
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
