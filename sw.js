@@ -1,5 +1,5 @@
 // sw.js — robuste Versionierung + Update-Strategie
-const CACHE_VERSION = 'v5';                           // <- bei jedem Release hochzählen
+const CACHE_VERSION = 'v6';                           // <- bei jedem Release hochzählen
 const STATIC_CACHE  = `cubeclock-static-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {
