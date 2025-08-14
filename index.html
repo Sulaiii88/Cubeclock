@@ -1,144 +1,113 @@
+
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Zeitwürfel</title>
+  <title>CubeClock</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
   <script>
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   </script>
-
   <style>
-    /* ===== Basis (unverändert) ===== */
-    body{margin:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;
-      font-family:'Space Mono',monospace;overflow:hidden;touch-action:none}
-    .scene{width:63vmin;height:63vmin;perspective:1100px;margin-bottom:90px}
-    .cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 1s ease;transform:rotateX(-30deg) rotateY(45deg)}
+    /* ===== dein bestehender Würfel (unverändert) ===== */
+    body{margin:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;
+      height:100vh;font-family:'Space Mono',monospace;overflow:hidden;touch-action:none;}
+    .scene{width:63vmin;height:63vmin;perspective:1100px;margin-bottom:90px;}
+    .cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 1s ease;
+      transform:rotateX(-30deg) rotateY(45deg);}
     .face{position:absolute;width:100%;height:100%;background:linear-gradient(to bottom right,#000,#111);color:#fff;
-      font-size:calc(63vmin / 1.5);letter-spacing:-5px;display:flex;justify-content:center;align-items:center;border:1px solid #555;backface-visibility:hidden}
-    .scene,.cube,.face{user-select:none;outline:none}
-    #hours{color:#e71f1b} #minutes{color:#ff8c42} #seconds{color:#fff275}
-    #year{color:#4B0082} #day{color:#87c8fa}
-    #month{color:#2f4fba;font-size:calc(63vmin / 2);font-weight:bold}
-    .front{transform:rotateY(90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg)}
-    .back{transform:rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg)}
-    .right{transform:rotateY(0deg) translateZ(31.5vmin)}
-    .left{transform:rotateY(-90deg) translateZ(31.5vmin)}
-    .top{transform:rotateX(90deg) translateZ(31.5vmin)}
-    .bottom{transform:rotateX(-90deg) translateZ(31.5vmin)}
-    #toggleButton{position:absolute;bottom:5vh;padding:1px 100px;border:none;outline:none;box-shadow:none;border-radius:10px;background:#444;cursor:pointer}
-    #toggleButton:hover{background:#666}
-    #toggleButton img{width:30px;height:auto;display:block}
+      font-size:calc(63vmin / 1.5);letter-spacing:-5px;display:flex;justify-content:center;align-items:center;
+      border:1px solid #555;backface-visibility:hidden;}
+    .scene,.cube,.face{user-select:none;outline:none;}
+    #hours{color:#e71f1b;} #minutes{color:#ff8c42;} #seconds{color:#fff275;}
+    #year{color:#4B0082;} #day{color:#87c8fa;}
+    #month{color:#2f4fba;font-size:calc(63vmin / 2);font-weight:bold;}
+    .front{transform:rotateY( 90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg);}
+    .back {transform:rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg);}
+    .right{transform:rotateY(  0deg) translateZ(31.5vmin);}
+    .left {transform:rotateY(-90deg) translateZ(31.5vmin);}
+    .top  {transform:rotateX( 90deg) translateZ(31.5vmin);}
+    .bottom{transform:rotateX(-90deg) translateZ(31.5vmin);}
+
+    #toggleButton{position:fixed;left:50%;transform:translateX(-50%);bottom:5vh;padding:1px 100px;border:none;outline:none;
+      box-shadow:none;border-radius:10px;background:#444;cursor:pointer;z-index:10;}
+    #toggleButton:hover{background:#666;}
+    #toggleButton img{width:30px;height:auto;display:block;}
+
     @media (min-width:601px){
-      .scene{width:50vmin;height:50vmin}
-      .face{font-size:calc(50vmin / 1.5)}
-      #month{font-size:calc(50vmin / 2)}
-      .front{transform:rotateY(90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg)}
-      .back{transform:rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg)}
-      .right{transform:rotateY(0deg) translateZ(25vmin)}
-      .left{transform:rotateY(-90deg) translateZ(25vmin)}
-      .top{transform:rotateX(90deg) translateZ(25vmin)}
-      .bottom{transform:rotateX(-90deg) translateZ(25vmin)}
+      .scene{width:50vmin;height:50vmin;}
+      .face{font-size:calc(50vmin / 1.5);}
+      #month{font-size:calc(50vmin / 2);}
+      .front{transform:rotateY( 90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg);}
+      .back {transform:rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg);}
+      .right{transform:rotateY(  0deg) translateZ(25vmin);}
+      .left {transform:rotateY(-90deg) translateZ(25vmin);}
+      .top  {transform:rotateX( 90deg) translateZ(25vmin);}
+      .bottom{transform:rotateX(-90deg) translateZ(25vmin);}
     }
     @media (display-mode:standalone) and (max-width:600px){
-      .scene{transform:scale(3);transform-origin:center}
+      .scene{transform:scale(3);transform-origin:center;}
     }
 
-    /* ===== Zahnrad-Button (wie vorher) ===== */
-    .settings-btn{
-      position:fixed;left:18px;top:18px;width:44px;height:44px;border-radius:12px;background:#212121;border:1px solid #3a3a3a;
-      display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:30;transition:transform .1s ease
+    /* ===== Settings UI (wie zuvor) ===== */
+    #settingsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:150;}
+    #settingsButton{
+      position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);
+      left:calc(env(safe-area-inset-left,0px) + 12px);width:44px;height:44px;padding:8px;background:#222;
+      border:1px solid rgba(255,255,255,.08);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer;z-index:200;
     }
-    .settings-btn:active{transform:scale(.97)}
-    .settings-btn img{width:24px;height:24px;filter:invert(100%)}
+    #settingsButton img{width:28px;height:28px;display:block;}
+    #settingsPanel{
+      position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);left:calc(env(safe-area-inset-left,0px) + 12px);
+      display:none;z-index:180;width:clamp(240px,88vw,340px);max-height:calc(100vh - 90px);overflow:auto;
+      background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.5);
+      padding:16px 14px 12px;
+    }
+    #panelArrow{position:fixed;display:none;z-index:181;top:calc(env(safe-area-inset-top,0px) + 54px);
+      left:calc(env(safe-area-inset-left,0px) + 36px);width:0;height:0;border-left:10px solid transparent;
+      border-right:10px solid transparent;border-bottom:12px solid #222;}
+    #settingsPanel h3{margin:0 0 12px;font-size:18px;letter-spacing:.5px;}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px;color:#eaeaea;margin:9px 0;}
 
-    /* ===== Settings-Panel – zurück auf das kompakte Layout „wie vorher“ ===== */
-    .settings{
-      position:fixed;left:16px;top:72px;max-width:460px;width:calc(100vw - 32px);
-      background:#1f1f20;color:#e8e8e8;border:1px solid #3a3a3b;border-radius:16px;
-      box-shadow:0 10px 34px rgba(0,0,0,.55);padding:14px 16px 12px;z-index:25;display:none
-    }
-    .settings:before{
-      content:"";position:absolute;left:26px;top:-9px;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:9px solid #1f1f20;
-      filter:drop-shadow(0 -1px 0 #3a3a3b)
-    }
-    .settings h3{margin:2px 2px 10px;font-size:24px;letter-spacing:.02em}
-    .row{display:flex;align-items:center;justify-content:space-between;margin:8px 2px}
-    .row label{font-size:18px}
-    .swatch{width:58px;height:30px;border-radius:10px;border:3px solid #d9d9d9;box-shadow:inset 0 0 0 2px rgba(0,0,0,.35);cursor:pointer;flex:none}
-    .settings .btn{width:100%;margin:8px 0;padding:12px 14px;border:none;border-radius:12px;background:#3a3a3a;color:#eaeaea;font-size:18px;cursor:pointer}
-    .settings .btn:hover{background:#4a4a4a}
+    .chip{width:52px;height:30px;border:4px solid #fff;border-radius:8px;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.25);cursor:pointer;position:relative;background:#000;}
+    .chip::after{content:"";position:absolute;inset:4px;border-radius:6px;background:var(--chip,#000);}
+    .btn{display:block;width:100%;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
+      background:#2b2b2b;color:#e8e8e8;font-size:15px;text-align:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),
+      0 2px 10px rgba(0,0,0,.25);}
+    .btn:hover{background:#3a3a3a;}
+    @media (max-width:360px){#settingsPanel{width:clamp(220px,92vw,300px)} .row{font-size:15px} .chip{width:48px;height:28px} .btn{font-size:14px}}
 
-    /* ===== Select color – mit großen RGB-Feldern (so lassen) ===== */
-    #pickerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);display:none;z-index:40}
-    #picker{position:fixed;left:50%;top:12vh;transform:translateX(-50%);width:min(92vw,620px);background:#272728;color:#f0f0f0;border:1px solid #3c3c3d;
-      border-radius:16px;padding:14px;z-index:41;display:none;box-shadow:0 12px 32px rgba(0,0,0,.6);max-height:92vh;overflow:auto}
-    #picker h4{margin:6px 8px 12px;font-size:22px}
-    #sv{width:100%;height:200px;border-radius:10px;display:block}
-    #hue{width:100%;margin:10px 0}
-    .preview{height:36px;border-radius:10px;margin:8px 0;border:1px solid #4a4a4a}
-    .rgb-row{display:flex;gap:8px;margin-top:8px}
-    .rgb-row label{display:flex;flex-direction:column;gap:6px;font-size:11px;flex:1}
-    .rgb-row input{padding:10px 10px;font-size:18px;height:44px;border-radius:10px;border:1px solid #4a4a4a;background:#1c1c1d;color:#f2f2f2}
-    .picker-actions{display:flex;justify-content:space-between;gap:10px;margin-top:12px}
-    .picker-actions button{padding:10px 12px;border:none;border-radius:12px;font-size:16px;cursor:pointer}
-    .picker-actions .cancel{background:#3a3a3a;color:#ddd}
-    .picker-actions .apply{background:#3D6AF2;color:#fff}
-    @media (max-height:720px){#sv{height:150px}}
-    @media (max-height:640px){#sv{height:130px}}
+    /* ===== Custom RGB Color Picker ===== */
+    #pickerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:300;}
+    #picker{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);
+      background:#2a2a2a;border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.6);
+      padding:14px;display:none;z-index:301;color:#fff;
+    }
+    #picker h4{margin:0 0 10px;font-size:16px}
+    .sv-wrap{position:relative;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.15);}
+    #sv{width:100%;height:180px;display:block;background:#f00;cursor:crosshair}
+    .sv-cursor{position:absolute;width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.3);pointer-events:none}
+    .h-wrap{position:relative;margin:10px 0}
+    #h{width:100%;height:14px;border-radius:10px;appearance:none;background:linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);outline:none;border:1px solid rgba(255,255,255,.15)}
+    #h::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #000}
+    .rgb-row{display:flex;gap:8px;margin-top:10px}
+    .rgb-row .cell{flex:1}
+    .rgb-row label{display:block;font-size:12px;opacity:.85;margin-bottom:4px}
+    .rgb-row input{width:100%;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;padding:8px 10px;font-family:inherit}
+    #preview{height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);margin:10px 0;background:#000}
+    .picker-actions{display:flex;gap:10px;margin-top:8px}
+    .picker-actions button{flex:1;border:none;border-radius:12px;padding:10px 12px;background:#3a3a3a;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+    .picker-actions button.primary{background:#4b7bec}
   </style>
 </head>
-
 <body>
-  <!-- Zahnrad -->
-  <button class="settings-btn" id="btnSettings" aria-label="Settings">
-    <img src="settings.png" alt="settings">
-  </button>
-
-  <!-- Settings-Panel (kompakt wie vorher) -->
-  <section class="settings" id="settings">
-    <h3>Change colors</h3>
-    <div class="row"><label>Hour:</label>      <div class="swatch" id="sw-hours"></div></div>
-    <div class="row"><label>Minute:</label>    <div class="swatch" id="sw-minutes"></div></div>
-    <div class="row"><label>Second:</label>    <div class="swatch" id="sw-seconds"></div></div>
-    <div class="row"><label>Year:</label>      <div class="swatch" id="sw-year"></div></div>
-    <div class="row"><label>Month:</label>     <div class="swatch" id="sw-month"></div></div>
-    <div class="row"><label>Day:</label>       <div class="swatch" id="sw-day"></div></div>
-    <div class="row"><label>Cube:</label>      <div class="swatch" id="sw-cube"></div></div>
-    <div class="row"><label>Background:</label><div class="swatch" id="sw-background"></div></div>
-    <button class="btn" id="btnDefaults">Default colors</button>
-    <button class="btn" id="btnToggle">Time/Date (space)</button>
-    <button class="btn" id="btnClose">Close</button>
-  </section>
-
-  <!-- Farb-Dialog -->
-  <div id="pickerOverlay"></div>
-  <div id="picker" role="dialog" aria-modal="true">
-    <h4 id="pickTitle">Select color</h4>
-    <canvas id="sv"></canvas>
-    <input id="hue" type="range" min="0" max="360" value="0" />
-    <div class="preview" id="preview"></div>
-
-    <div class="rgb-row">
-      <label>R <input id="inR" type="number" min="0" max="255"></label>
-      <label>G <input id="inG" type="number" min="0" max="255"></label>
-      <label>B <input id="inB" type="number" min="0" max="255"></label>
-    </div>
-
-    <div class="picker-actions">
-      <button class="cancel" id="cancelPick">Cancel</button>
-      <button class="apply"  id="applyPick">Apply</button>
-    </div>
-  </div>
-
-  <!-- Würfel -->
   <div class="scene">
     <div class="cube" id="cube">
       <div class="face front"  id="year">00</div>
@@ -151,89 +120,211 @@
   </div>
 
   <button id="toggleButton" onclick="toggleCube()">
-    <img src="spacebar_icon.png" alt="Leertaste" />
+    <img src="spacebar_icon.png" alt="spacebar" />
   </button>
 
+  <!-- Settings -->
+  <button id="settingsButton" type="button" aria-label="Settings">
+    <img src="settings.png" alt="Settings" />
+  </button>
+  <div id="panelArrow"></div>
+  <div id="settingsOverlay"></div>
+
+  <div id="settingsPanel" role="dialog" aria-label="Settings">
+    <h3>Change colors</h3>
+    <div class="row">Hour:       <div class="chip" id="chipHours"   data-key="hours"></div></div>
+    <div class="row">Minute:     <div class="chip" id="chipMinutes" data-key="minutes"></div></div>
+    <div class="row">Second:     <div class="chip" id="chipSeconds" data-key="seconds"></div></div>
+    <div class="row">Year:       <div class="chip" id="chipYear"    data-key="year"></div></div>
+    <div class="row">Month:      <div class="chip" id="chipMonth"   data-key="month"></div></div>
+    <div class="row">Day:        <div class="chip" id="chipDay"     data-key="day"></div></div>
+    <div class="row">Cube faces: <div class="chip" id="chipCube"    data-key="cube"></div></div>
+    <div class="row">Background: <div class="chip" id="chipBackground" data-key="background"></div></div>
+
+    <button class="btn" type="button" id="btnDefaults">Reset to defaults</button>
+    <button class="btn" type="button" onclick="toggleCube()">Time/Date (space)</button>
+    <button class="btn" type="button" id="closeSettingsBtn">Close</button>
+  </div>
+
+  <!-- RGB Picker Modal -->
+  <div id="pickerOverlay"></div>
+  <div id="picker">
+    <h4>Select color</h4>
+    <div class="sv-wrap">
+      <canvas id="sv"></canvas>
+      <div class="sv-cursor" id="svc"></div>
+    </div>
+    <div class="h-wrap">
+      <input id="h" type="range" min="0" max="360" value="0">
+    </div>
+    <div id="preview"></div>
+    <div class="rgb-row">
+      <div class="cell"><label for="r">R</label><input id="r" type="number" min="0" max="255"></div>
+      <div class="cell"><label for="g">G</label><input id="g" type="number" min="0" max="255"></div>
+      <div class="cell"><label for="b">B</label><input id="b" type="number" min="0" max="255"></div>
+    </div>
+    <div class="picker-actions">
+      <button id="cancelPick">Cancel</button>
+      <button id="applyPick" class="primary">Apply</button>
+    </div>
+  </div>
+
   <script>
-    /* ===== Würfel-Logik (unverändert) ===== */
-    let showingDate=false, rotateX=-30, rotateY=45, isDragging=false, lastX, lastY, userRotated=false, inactivityTimer, toggleCount=0;
-    const cube=document.getElementById("cube"), toggleButton=document.getElementById("toggleButton");
+    /* ===== Würfel & Interaktion (wie gehabt) ===== */
+    let showingDate=false, rotateX=-30, rotateY=45, isDragging=false, lastX,lastY, userRotated=false, inactivityTimer, toggleCount=0;
+    const cube=document.getElementById("cube");
+    const toggleButton=document.getElementById("toggleButton");
+
     function updateTime(){
-      const now=new Date(), monthNames=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
-      hours.textContent=String(now.getHours()).padStart(2,'0');
-      minutes.textContent=String(now.getMinutes()).padStart(2,'0');
-      seconds.textContent=String(now.getSeconds()).padStart(2,'0');
-      year.textContent=String(now.getFullYear()%100).padStart(2,'0');
-      month.textContent=monthNames[now.getMonth()];
-      day.textContent=String(now.getDate()).padStart(2,'0');
+      const now=new Date(); const monthNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      hours.textContent  = String(now.getHours()).padStart(2,'0');
+      minutes.textContent= String(now.getMinutes()).padStart(2,'0');
+      seconds.textContent= String(now.getSeconds()).padStart(2,'0');
+      year.textContent   = String(now.getFullYear()%100).padStart(2,'0');
+      month.textContent  = monthNames[now.getMonth()];
+      day.textContent    = String(now.getDate()).padStart(2,'0');
     }
-    function toggleCube(){ toggleCount++; if(toggleCount>=2) toggleButton.style.display="none";
-      showingDate=!showingDate; rotateX=showingDate?-215:-30; rotateY=45; cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}
-    function resetToClockView(){ if(showingDate||userRotated){showingDate=false;userRotated=false;rotateX=-30;rotateY=45;cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}}
-    function startInactivityTimer(){ clearTimeout(inactivityTimer); inactivityTimer=setTimeout(resetToClockView,10000); }
-    cube.addEventListener("mousedown",(e)=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;});
+    function toggleCube(){toggleCount++;if(toggleCount>=2)toggleButton.style.display="none";
+      showingDate=!showingDate;rotateX=showingDate?-215:-30;rotateY=45;
+      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}
+    function resetToClockView(){if(showingDate||userRotated){showingDate=false;userRotated=false;rotateX=-30;rotateY=45;
+      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}}
+    function startInactivityTimer(){clearTimeout(inactivityTimer);inactivityTimer=setTimeout(resetToClockView,10000);}
+    cube.addEventListener("mousedown",e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;});
     document.addEventListener("mouseup",()=>{isDragging=false;});
-    document.addEventListener("mousemove",(e)=>{ if(!isDragging) return; const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY;
-      rotateY+=dx*0.5; rotateX-=dy*0.5; cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`; userRotated=true; startInactivityTimer();});
-    document.body.addEventListener("touchstart",(e)=>{const t=e.touches[0];lastX=t.clientX;lastY=t.clientY;},{passive:true});
-    document.body.addEventListener("touchmove",(e)=>{e.preventDefault();const t=e.touches[0];const dx=t.clientX-lastX, dy=t.clientY-lastY; lastX=t.clientX; lastY=t.clientY;
-      rotateY+=dx*1; rotateX-=dy*1; cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`; userRotated=true; startInactivityTimer();},{passive:false});
-    window.addEventListener('keydown',(e)=>{ if(e.code==='Space'&&!e.target.matches('button, input, textarea')){ e.preventDefault(); toggleCube(); }});
-    setInterval(updateTime,1000); updateTime();
+    document.addEventListener("mousemove",e=>{if(!isDragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;
+      lastX=e.clientX;lastY=e.clientY;rotateY+=dx*0.5;rotateX-=dy*0.5;
+      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;userRotated=true;startInactivityTimer();});
+    document.body.addEventListener("touchstart",e=>{const t=e.touches[0];lastX=t.clientX;lastY=t.clientY;});
+    document.body.addEventListener("touchmove",e=>{e.preventDefault();const t=e.touches[0];
+      const dx=t.clientX-lastX,dy=t.clientY-lastY;lastX=t.clientX;lastY=t.clientY;
+      rotateY+=dx*1;rotateX-=dy*1;cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      userRotated=true;startInactivityTimer();},{passive:false});
+    window.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.matches('button, input, textarea')){e.preventDefault();toggleCube();}});
+    setInterval(updateTime,1000);updateTime();
 
-    /* ===== Settings + Farben ===== */
-    const defaults={hours:'#e71f1b',minutes:'#ff8c42',seconds:'#fff275',year:'#4B0082',month:'#2f4fba',day:'#87c8fa',cube:'#000000',background:'#000000'};
-    const map={hours:hours,minutes:minutes,seconds:seconds,year:year,month:month,day:day,cube:document.querySelectorAll('.face'),background:document.body};
-    const getColor=(k)=>localStorage.getItem('color-'+k)||defaults[k];
-    function applyColors(){
-      hours.style.color=getColor('hours'); minutes.style.color=getColor('minutes'); seconds.style.color=getColor('seconds');
-      year.style.color=getColor('year'); month.style.color=getColor('month'); day.style.color=getColor('day');
-      map.cube.forEach(f=>f.style.background=`linear-gradient(to bottom right, ${getColor('cube')}, #111)`); document.body.style.background=getColor('background');
-      ['hours','minutes','seconds','year','month','day','cube','background'].forEach(k=>document.getElementById('sw-'+k).style.background=getColor(k));
-    } applyColors();
+    /* ===== Settings öffnen/schließen ===== */
+    const settingsBtn=document.getElementById('settingsButton');
+    const settingsPanel=document.getElementById('settingsPanel');
+    const settingsOverlay=document.getElementById('settingsOverlay');
+    const panelArrow=document.getElementById('panelArrow');
+    const closeSettingsBtn=document.getElementById('closeSettingsBtn');
+    const btnDefaults=document.getElementById('btnDefaults');
+    function openSettings(){settingsOverlay.style.display='block';settingsPanel.style.display='block';panelArrow.style.display='block';}
+    function closeSettings(){settingsOverlay.style.display='none';settingsPanel.style.display='none';panelArrow.style.display='none';}
+    settingsBtn.addEventListener('click',()=> (settingsPanel.style.display==='block'?closeSettings():openSettings()));
+    settingsOverlay.addEventListener('click',closeSettings);closeSettingsBtn.addEventListener('click',closeSettings);
 
-    const settings=document.getElementById('settings');
-    document.getElementById('btnSettings').addEventListener('click',()=>{settings.style.display=settings.style.display==='block'?'none':'block';});
-    document.getElementById('btnClose').addEventListener('click',()=>settings.style.display='none');
-    document.getElementById('btnDefaults').addEventListener('click',()=>{Object.keys(defaults).forEach(k=>localStorage.removeItem('color-'+k));applyColors();});
-    document.getElementById('btnToggle').addEventListener('click',toggleCube);
-    ['hours','minutes','seconds','year','month','day','cube','background'].forEach(k=>document.getElementById('sw-'+k).addEventListener('click',()=>openPicker(k)));
-
-    /* ===== Custom RGB-Dialog (große Eingabefelder) ===== */
-    const pickerOverlay=document.getElementById('pickerOverlay'), picker=document.getElementById('picker'),
-          sv=document.getElementById('sv'), hue=document.getElementById('hue'), preview=document.getElementById('preview'),
-          inR=document.getElementById('inR'), inG=document.getElementById('inG'), inB=document.getElementById('inB');
-    const namesMap={hours:"Hour",minutes:"Minute",seconds:"Second",year:"Year",month:"Month",day:"Day",cube:"Cube",background:"Background"};
-    let currentKey='hours', h=0, s=1, v=1;
-
-    const rgbToHex=(r,g,b)=>'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
-    function hsvToRgb(h,s,v){let c=v*s,x=c*(1-Math.abs(((h/60)%2)-1)),m=v-c;let [r,g,b]=[[c,x,0],[x,c,0],[0,c,0],[0,c,x],[x,0,c],[c,0,x]][Math.floor(h/60)%6];return [Math.round((r+m)*255),Math.round((g+m)*255),Math.round((b+m)*255)];}
-    function rgbToHsv(r,g,b){r/=255;g/=255;b/=255;let max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min,h=0;if(d!==0){if(max===r)h=60*((g-b)/d%6);else if(max===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4);}if(h<0)h+=360;let s=max===0?0:d/max;let v=max;return [h,s,v];}
-    function drawSV(){const ctx=sv.getContext('2d'),w=sv.width,hgt=sv.height;const [rr,gg,bb]=hsvToRgb(h,1,1);ctx.fillStyle=`rgb(${rr},${gg},${bb})`;ctx.fillRect(0,0,w,hgt);
-      let gw=ctx.createLinearGradient(0,0,w,0);gw.addColorStop(0,'#fff');gw.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gw;ctx.fillRect(0,0,w,hgt);
-      let gb=ctx.createLinearGradient(0,0,0,hgt);gb.addColorStop(0,'rgba(0,0,0,0)');gb.addColorStop(1,'#000');ctx.fillStyle=gb;ctx.fillRect(0,0,w,hgt);
-      ctx.beginPath();ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.arc(s*w,(1-v)*hgt,8,0,Math.PI*2);ctx.stroke();
-      ctx.beginPath();ctx.strokeStyle='rgba(0,0,0,.6)';ctx.arc(s*w,(1-v)*hgt,10,0,Math.PI*2);ctx.stroke();}
-    function setFromRGB(r,g,b){inR.value=r;inG.value=g;inB.value=b;[h,s,v]=rgbToHsv(r,g,b);hue.value=Math.round(h);preview.style.background=rgbToHex(r,g,b);drawSV();}
-
-    function openPicker(key){
-      currentKey=key; document.getElementById('pickTitle').textContent=`${namesMap[key]||'Color'} – Select color`;
-      const col=(localStorage.getItem('color-'+key)||defaults[key]).replace('#','');
-      const r=parseInt(col.slice(0,2),16), g=parseInt(col.slice(2,4),16), b=parseInt(col.slice(4,6),16); setFromRGB(r,g,b);
-      pickerOverlay.style.display='block'; picker.style.display='block';
-      const rect=picker.getBoundingClientRect(); sv.width=Math.floor(rect.width-28);
-      const vh=Math.max(document.documentElement.clientHeight, window.innerHeight||0), reserved=260;
-      sv.height=Math.max(130, Math.min(240, vh-reserved)); drawSV();
+    /* ===== Farben: speichern / anwenden ===== */
+    const mapping={hours:"chipHours",minutes:"chipMinutes",seconds:"chipSeconds",year:"chipYear",month:"chipMonth",day:"chipDay",cube:"chipCube",background:"chipBackground"};
+    const defaults={hours:"#e71f1b",minutes:"#ff8c42",seconds:"#fff275",year:"#4B0082",month:"#2f4fba",day:"#87c8fa",cube:"#111111",background:"#000000"};
+    function setChipColor(key,val){document.getElementById(mapping[key]).style.setProperty('--chip',val);}
+    function applyColor(key,val){
+      if(key==='cube'){document.querySelectorAll('.face').forEach(f=>f.style.background=val);}
+      else if(key==='background'){document.body.style.background=val;}
+      else{document.getElementById(key).style.color=val;}
+      localStorage.setItem('color-'+key,val);setChipColor(key,val);
     }
-    function closePicker(){pickerOverlay.style.display='none';picker.style.display='none';}
-    hue.addEventListener('input',()=>{h=+hue.value;const [r,g,b]=hsvToRgb(h,s,v);setFromRGB(r,g,b);});
-    sv.addEventListener('mousedown',e=>{const move=(evt)=>{const r=sv.getBoundingClientRect(),x=Math.min(Math.max(0,evt.clientX-r.left),r.width),y=Math.min(Math.max(0,evt.clientY-r.top),r.height);s=x/r.width;v=1-y/r.height;const [R,G,B]=hsvToRgb(h,s,v);setFromRGB(R,G,B);};move(e);const up=()=>{window.removeEventListener('mousemove',move);window.removeEventListener('mouseup',up);};window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);});
-    sv.addEventListener('touchstart',e=>{const r=sv.getBoundingClientRect(),t=e.touches[0];const x=Math.min(Math.max(0,t.clientX-r.left),r.width),y=Math.min(Math.max(0,t.clientY-r.top),r.height);s=x/r.width;v=1-y/r.height;const [R,G,B]=hsvToRgb(h,s,v);setFromRGB(R,G,B);},{passive:true});
-    sv.addEventListener('touchmove',e=>{e.preventDefault();const r=sv.getBoundingClientRect(),t=e.touches[0];const x=Math.min(Math.max(0,t.clientX-r.left),r.width),y=Math.min(Math.max(0,t.clientY-r.top),r.height);s=x/r.width;v=1-y/r.height;const [R,G,B]=hsvToRgb(h,s,v);setFromRGB(R,G,B);},{passive:false});
-    [inR,inG,inB].forEach(inp=>inp.addEventListener('input',()=>{const R=Math.min(255,Math.max(0,+inR.value||0)),G=Math.min(255,Math.max(0,+inG.value||0)),B=Math.min(255,Math.max(0,+inB.value||0));setFromRGB(R,G,B);}));
-    document.getElementById('cancelPick').addEventListener('click',closePicker);
-    document.getElementById('applyPick').addEventListener('click',()=>{const R=Math.min(255,Math.max(0,+inR.value||0)),G=Math.min(255,Math.max(0,+inG.value||0)),B=Math.min(255,Math.max(0,+inB.value||0));localStorage.setItem('color-'+currentKey,rgbToHex(R,G,B));applyColors();closePicker();});
+    function applySavedColors(){Object.keys(mapping).forEach(k=>applyColor(k, localStorage.getItem('color-'+k)||defaults[k]));}
+    function resetToDefaultColors(){Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k));applySavedColors();}
+    window.addEventListener('load',()=>{if(!localStorage.getItem('visitedBefore')){localStorage.setItem('visitedBefore','true');resetToDefaultColors();}else{applySavedColors();}});
+    btnDefaults.addEventListener('click',resetToDefaultColors);
+
+    /* ====== RGB Picker ====== */
+    const pickerOverlay=document.getElementById('pickerOverlay');
+    const picker=document.getElementById('picker');
+    const sv=document.getElementById('sv'); const svc=document.getElementById('svc');
+    const h=document.getElementById('h'); const preview=document.getElementById('preview');
+    const Rin=document.getElementById('r'), Gin=document.getElementById('g'), Bin=document.getElementById('b');
+    let currentKey=null, hue=0, sat=1, val=1; // HSV
+
+    // Helper: RGB/HSV/HEX
+    function hsv2rgb(h,s,v){let f=(n,k=(n+h/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return [f(5),f(3),f(1)].map(x=>Math.round(x*255));}
+    function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,v=max;const d=max-min;s=max===0?0:d/max;
+      if(max===min){h=0}else{switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}h*=60}
+      return [h,s,v]}
+    const toHex=n=>('#'+[n[0],n[1],n[2]].map(x=>x.toString(16).padStart(2,'0')).join(''));
+
+    // SV Fläche zeichnen (bei Hue Änderung)
+    function drawSV(){
+      const ctx=sv.getContext('2d'), w=sv.width, hgt=sv.height;
+      const [r,g,b]=hsv2rgb(hue,1,1);
+      // Füllfarbe Hue
+      ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.fillRect(0,0,w,hgt);
+      // Weißverlauf (links->rechts Sättigung)
+      const grdW=ctx.createLinearGradient(0,0,w,0); grdW.addColorStop(0,'#fff'); grdW.addColorStop(1,'transparent'); ctx.fillStyle=grdW; ctx.fillRect(0,0,w,hgt);
+      // Schwarzverlauf (oben->unten Value)
+      const grdB=ctx.createLinearGradient(0,0,0,hgt); grdB.addColorStop(0,'transparent'); grdB.addColorStop(1,'#000'); ctx.fillStyle=grdB; ctx.fillRect(0,0,w,hgt);
+      // Cursor positionieren
+      svc.style.left = (sat * w - svc.offsetWidth/2)+'px';
+      svc.style.top  = ((1-val) * hgt - svc.offsetHeight/2)+'px';
+    }
+
+    function setFromHSV(hh,ss,vv){hue=hh; sat=Math.min(1,Math.max(0,ss)); val=Math.min(1,Math.max(0,vv));
+      const [r,g,b]=hsv2rgb(hue,sat,val);
+      preview.style.background=`rgb(${r},${g},${b})`;
+      Rin.value=r; Gin.value=g; Bin.value=b;
+      drawSV();
+    }
+    function setFromRGB(r,g,b){
+      r=Math.min(255,Math.max(0,+r|0)); g=Math.min(255,Math.max(0,+g|0)); b=Math.min(255,Math.max(0,+b|0));
+      const hsv=rgb2hsv(r,g,b); hue=hsv[0]; sat=hsv[1]; val=hsv[2];
+      h.value=Math.round(hue); preview.style.background=`rgb(${r},${g},${b})`;
+      Rin.value=r; Gin.value=g; Bin.value=b; drawSV();
+    }
+
+    // Öffnen/Schließen
+    function openPicker(key){
+      currentKey=key;
+      const col = localStorage.getItem('color-'+key) || defaults[key];
+      // hex -> rgb
+      const r=parseInt(col.slice(1,3),16), g=parseInt(col.slice(3,5),16), b=parseInt(col.slice(5,7),16);
+      setFromRGB(r,g,b);
+      pickerOverlay.style.display='block'; picker.style.display='block';
+      // Canvas Größe an Container anpassen
+      const rect=picker.getBoundingClientRect(); sv.width = Math.floor(rect.width-28); sv.height=180; drawSV();
+    }
+    function closePicker(){pickerOverlay.style.display='none'; picker.style.display='none'; currentKey=null;}
     pickerOverlay.addEventListener('click',closePicker);
+    document.getElementById('cancelPick').addEventListener('click',closePicker);
+
+    // Hue Slider
+    h.addEventListener('input',()=> setFromHSV(+h.value, sat, val));
+
+    // RGB Inputs
+    Rin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
+    Gin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
+    Bin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
+
+    // SV interaktiv (mouse + touch)
+    function handleSV(clientX,clientY){
+      const r=sv.getBoundingClientRect();
+      const x=Math.min(Math.max(clientX-r.left,0),r.width);
+      const y=Math.min(Math.max(clientY-r.top,0),r.height);
+      const s=x/r.width, v=1-y/r.height;
+      setFromHSV(hue,s,v);
+    }
+    let svDrag=false;
+    sv.addEventListener('mousedown',e=>{svDrag=true;handleSV(e.clientX,e.clientY)});
+    document.addEventListener('mousemove',e=>{if(svDrag) handleSV(e.clientX,e.clientY)});
+    document.addEventListener('mouseup',()=>svDrag=false);
+    sv.addEventListener('touchstart',e=>{svDrag=true;handleSV(e.touches[0].clientX,e.touches[0].clientY)},{passive:false});
+    sv.addEventListener('touchmove',e=>{if(svDrag){e.preventDefault();handleSV(e.touches[0].clientX,e.touches[0].clientY)}},{passive:false});
+    sv.addEventListener('touchend',()=>svDrag=false);
+
+    // Apply
+    document.getElementById('applyPick').addEventListener('click',()=>{
+      const rgb=`rgb(${Rin.value|0},${Gin.value|0},${Bin.value|0})`;
+      // in HEX speichern
+      const hex = toHex([Rin.value|0, Gin.value|0, Bin.value|0]);
+      applyColor(currentKey, hex);
+      closePicker();
+    });
+
+    // Chips klickbar
+    Object.keys(mapping).forEach(k=>{
+      document.getElementById(mapping[k]).addEventListener('click',()=>openPicker(k));
+    });
   </script>
 </body>
 </html>
