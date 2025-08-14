@@ -16,7 +16,7 @@
   </script>
 
   <style>
-    /* === dein bestehendes Layout für den Würfel (unverändert) === */
+    /* ====== dein bestehender Würfel (unverändert) ====== */
     body{
       margin:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;
       height:100vh;font-family:'Space Mono',monospace;overflow:hidden;touch-action:none;
@@ -40,7 +40,6 @@
     .top  {transform:rotateX( 90deg) translateZ(31.5vmin);}
     .bottom{transform:rotateX(-90deg) translateZ(31.5vmin);}
 
-    /* Spacebar-Button (wie bei dir) */
     #toggleButton{
       position:fixed;left:50%;transform:translateX(-50%);bottom:5vh;
       padding:1px 100px;border:none;outline:none;box-shadow:none;border-radius:10px;background:#444;cursor:pointer;z-index:10;
@@ -48,7 +47,6 @@
     #toggleButton:hover{background:#666;}
     #toggleButton img{width:30px;height:auto;display:block;}
 
-    /* Desktop kleiner */
     @media (min-width:601px){
       .scene{width:50vmin;height:50vmin;}
       .face{font-size:calc(50vmin / 1.5);}
@@ -60,20 +58,15 @@
       .top  {transform:rotateX( 90deg) translateZ(25vmin);}
       .bottom{transform:rotateX(-90deg) translateZ(25vmin);}
     }
-    /* installierte PWA auf Handy größer */
     @media (display-mode:standalone) and (max-width:600px){
       .scene{transform:scale(3);transform-origin:center;}
     }
 
-    /* === NEU: Settings-UI genau wie Vorlage, aber mobil kleiner === */
-
-    /* Overlay */
+    /* ====== Settings UI (wie Vorlage, aber kompakter mobil) ====== */
     #settingsOverlay{
       position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:saturate(120%) blur(2px);
       display:none;z-index:150;
     }
-
-    /* Gear button (oben links, safe-area) */
     #settingsButton{
       position:fixed;
       top:calc(env(safe-area-inset-top,0px) + 12px);
@@ -86,13 +79,12 @@
     #settingsButton:active{transform:translateY(1px);}
     #settingsButton img{width:28px;height:28px;display:block;}
 
-    /* Panel – responsive Breite & Typo */
     #settingsPanel{
       position:fixed;
       top:calc(env(safe-area-inset-top,0px) + 62px);
       left:calc(env(safe-area-inset-left,0px) + 12px);
       display:none;z-index:180;
-      width:clamp(240px, 88vw, 340px);              /* ⬅︎ kleiner auf Handy, max 340px */
+      width:clamp(240px, 88vw, 340px);
       max-height:calc(100vh - env(safe-area-inset-top,0px) - 90px);
       overflow:auto;
       background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;
@@ -101,25 +93,21 @@
     }
     #settingsPanel h3{margin:0 0 12px;font-size:18px;color:#f1f1f1;letter-spacing:.5px;}
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px;color:#eaeaea;margin:9px 0;}
-    /* Farbfeld – exakt wie Vorlage, aber kompakter (Handy) */
-    .color-input{
-      width:52px;height:30px;appearance:none;-webkit-appearance:none;cursor:pointer;
-      background:#000;border:4px solid #fff;border-radius:8px;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
-    }
-    .color-input::-webkit-color-swatch-wrapper{padding:0;border-radius:6px;}
-    .color-input::-webkit-color-swatch{border:none;border-radius:6px;}
 
+    /* Farbe-„Chips“ (öffnet unseren eigenen Picker) */
+    .chip{
+      width:52px;height:30px;border:4px solid #fff;border-radius:8px;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+      cursor:pointer;position:relative;background:#000;
+    }
+    .chip::after{content:"";position:absolute;inset:4px;border-radius:6px;background:var(--chip,#000);}
     .btn{
       display:block;width:100%;margin-top:10px;padding:10px 12px;border-radius:14px;
       border:1px solid rgba(255,255,255,.1);background:#2b2b2b;color:#e8e8e8;font-size:15px;text-align:center;
       box-shadow:inset 0 -2px 0 rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.25);
       transition:background .2s ease, transform .05s ease;
     }
-    .btn:hover{background:#3a3a3a;}
-    .btn:active{transform:translateY(1px);}
-
-    /* Pfeil unter dem Zahnrad */
+    .btn:hover{background:#3a3a3a;} .btn:active{transform:translateY(1px);}
     #panelArrow{
       position:fixed;display:none;z-index:181;
       top:calc(env(safe-area-inset-top,0px) + 54px);
@@ -127,15 +115,41 @@
       width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:12px solid #222;
       filter:drop-shadow(0 -1px 0 rgba(255,255,255,.08));
     }
-
-    /* sehr kleine Phones noch kompakter */
     @media (max-width:360px){
       #settingsPanel{width:clamp(220px, 92vw, 300px);}
       #settingsPanel h3{font-size:17px}
       .row{font-size:15px}
-      .color-input{width:48px;height:28px}
+      .chip{width:48px;height:28px}
       .btn{font-size:14px}
     }
+
+    /* ====== Custom Color Picker (Modal) ====== */
+    #pickerOverlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:300;
+    }
+    #picker{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:min(92vw,380px);background:#2a2a2a;border:1px solid rgba(255,255,255,.12);border-radius:16px;
+      box-shadow:0 20px 50px rgba(0,0,0,.6);padding:14px;display:none;z-index:301;color:#fff;
+    }
+    #picker h4{margin:0 0 10px;font-size:16px}
+    .swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:10px 0;}
+    .swatch{
+      width:46px;height:34px;border-radius:8px;border:3px solid #fff;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);cursor:pointer;
+    }
+    #preview{height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);margin:8px 0;background:#000;}
+    #hexRow{display:flex;gap:8px;align-items:center;margin:6px 0;}
+    #hexInput{
+      flex:1;min-width:0;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
+      padding:8px 10px;font-family:inherit;font-size:14px;
+    }
+    .picker-actions{display:flex;gap:10px;margin-top:10px}
+    .picker-actions button{
+      flex:1;border:none;border-radius:12px;padding:10px 12px;background:#3a3a3a;color:#fff;
+      box-shadow:0 2px 10px rgba(0,0,0,.25);
+    }
+    .picker-actions button.primary{background:#4b7bec;}
   </style>
 </head>
 <body>
@@ -164,22 +178,39 @@
   <div id="settingsPanel" role="dialog" aria-label="Settings">
     <h3>Change colors</h3>
 
-    <div class="row">Hour:        <input type="color" id="colorHours"   class="color-input"></div>
-    <div class="row">Minute:      <input type="color" id="colorMinutes" class="color-input"></div>
-    <div class="row">Second:      <input type="color" id="colorSeconds" class="color-input"></div>
-    <div class="row">Year:        <input type="color" id="colorYear"    class="color-input"></div>
-    <div class="row">Month:       <input type="color" id="colorMonth"   class="color-input"></div>
-    <div class="row">Day:         <input type="color" id="colorDay"     class="color-input"></div>
-    <div class="row">Cube faces:  <input type="color" id="colorCube"    class="color-input"></div>
-    <div class="row">Background:  <input type="color" id="colorBackground" class="color-input"></div>
+    <!-- Wir nutzen Chips statt native <input type=color> -->
+    <div class="row">Hour:       <div class="chip" id="chipHours"   data-key="hours"></div></div>
+    <div class="row">Minute:     <div class="chip" id="chipMinutes" data-key="minutes"></div></div>
+    <div class="row">Second:     <div class="chip" id="chipSeconds" data-key="seconds"></div></div>
+    <div class="row">Year:       <div class="chip" id="chipYear"    data-key="year"></div></div>
+    <div class="row">Month:      <div class="chip" id="chipMonth"   data-key="month"></div></div>
+    <div class="row">Day:        <div class="chip" id="chipDay"     data-key="day"></div></div>
+    <div class="row">Cube faces: <div class="chip" id="chipCube"    data-key="cube"></div></div>
+    <div class="row">Background: <div class="chip" id="chipBackground" data-key="background"></div></div>
 
     <button class="btn" type="button" id="btnDefaults">Reset to defaults</button>
     <button class="btn" type="button" onclick="toggleCube()">Time/Date (space)</button>
     <button class="btn" type="button" id="closeSettingsBtn">Close</button>
   </div>
 
+  <!-- Custom Color Picker Modal -->
+  <div id="pickerOverlay"></div>
+  <div id="picker">
+    <h4>Select color</h4>
+    <div id="preview"></div>
+    <div class="swatches" id="swatches"></div>
+    <div id="hexRow">
+      <label for="hexInput">HEX:</label>
+      <input id="hexInput" type="text" placeholder="#ff0000" spellcheck="false" />
+    </div>
+    <div class="picker-actions">
+      <button id="cancelPick">Cancel</button>
+      <button id="applyPick" class="primary">Apply</button>
+    </div>
+  </div>
+
   <script>
-    /* === Würfel-Logik wie bei dir === */
+    /* ===== Würfel-Logik (unverändert) ===== */
     let showingDate=false, rotateX=-30, rotateY=45, isDragging=false, lastX,lastY, userRotated=false, inactivityTimer, toggleCount=0;
     const cube=document.getElementById("cube");
     const toggleButton=document.getElementById("toggleButton");
@@ -212,7 +243,6 @@
       rotateY+=dx*0.5; rotateX-=dy*0.5; cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
       userRotated=true; startInactivityTimer();
     });
-
     document.body.addEventListener("touchstart",e=>{const t=e.touches[0]; lastX=t.clientX; lastY=t.clientY;});
     document.body.addEventListener("touchmove",e=>{
       e.preventDefault(); const t=e.touches[0];
@@ -220,13 +250,12 @@
       rotateY+=dx*1; rotateX-=dy*1; cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
       userRotated=true; startInactivityTimer();
     },{passive:false});
-
     window.addEventListener('keydown',e=>{
       if(e.code==='Space' && !e.target.matches('button, input, textarea')){ e.preventDefault(); toggleCube(); }
     });
     setInterval(updateTime,1000); updateTime();
 
-    /* === Settings-Logik === */
+    /* ===== Settings öffnen/schließen ===== */
     const settingsBtn=document.getElementById('settingsButton');
     const settingsPanel=document.getElementById('settingsPanel');
     const settingsOverlay=document.getElementById('settingsOverlay');
@@ -240,38 +269,96 @@
     settingsOverlay.addEventListener('click', closeSettings);
     closeSettingsBtn.addEventListener('click', closeSettings);
 
-    const mapping={hours:"colorHours",minutes:"colorMinutes",seconds:"colorSeconds",year:"colorYear",month:"colorMonth",day:"colorDay",cube:"colorCube",background:"colorBackground"};
-    const defaults={hours:"#e71f1b",minutes:"#ff8c42",seconds:"#fff275",year:"#4B0082",month:"#2f4fba",day:"#87c8fa",cube:"#111111",background:"#000000"};
+    /* ===== Farben (Speichern + Chips) ===== */
+    const mapping={
+      hours:"chipHours", minutes:"chipMinutes", seconds:"chipSeconds",
+      year:"chipYear", month:"chipMonth", day:"chipDay",
+      cube:"chipCube", background:"chipBackground"
+    };
+    const defaults={
+      hours:"#e71f1b", minutes:"#ff8c42", seconds:"#fff275",
+      year:"#4B0082", month:"#2f4fba", day:"#87c8fa",
+      cube:"#111111", background:"#000000"
+    };
 
-    window.addEventListener('load',()=>{ if(!localStorage.getItem('visitedBefore')){localStorage.setItem('visitedBefore','true'); resetToDefaultColors();} else {applySavedColors();} });
-
+    function setChipColor(key, val){
+      const chip=document.getElementById(mapping[key]);
+      chip.style.setProperty('--chip', val);
+    }
     function applyColor(key,val){
       if(key==='cube'){ document.querySelectorAll('.face').forEach(f=>f.style.background=val); }
       else if(key==='background'){ document.body.style.background=val; }
       else{ document.getElementById(key).style.color=val; }
       localStorage.setItem('color-'+key,val);
+      setChipColor(key,val);
     }
-    Object.keys(mapping).forEach(key=>{
-      const input=document.getElementById(mapping[key]);
-      input.addEventListener('input',e=>applyColor(key,e.target.value));
-    });
-
     function applySavedColors(){
       Object.keys(mapping).forEach(key=>{
-        const input=document.getElementById(mapping[key]);
-        const saved=localStorage.getItem('color-'+key);
-        const val=saved || defaults[key];
-        if(key==='cube'){ document.querySelectorAll('.face').forEach(f=>f.style.background=val); }
-        else if(key==='background'){ document.body.style.background=val; }
-        else{ document.getElementById(key).style.color=val; }
-        input.value=val;
+        const val=localStorage.getItem('color-'+key) || defaults[key];
+        applyColor(key,val);
       });
     }
     function resetToDefaultColors(){
       Object.keys(mapping).forEach(key=>localStorage.removeItem('color-'+key));
       applySavedColors();
     }
+    window.addEventListener('load',()=>{
+      if(!localStorage.getItem('visitedBefore')){localStorage.setItem('visitedBefore','true'); resetToDefaultColors();}
+      else{applySavedColors();}
+    });
     btnDefaults.addEventListener('click', resetToDefaultColors);
+
+    /* ===== Custom Color Picker ===== */
+    const palette=[
+      "#ff3b30","#ff9500","#ffcc00","#34c759","#007aff","#5856d6",
+      "#ff2d55","#5ac8fa","#64d2ff","#ffffff","#000000","#8e8e93",
+      "#e71f1b","#ff8c42","#fff275","#4B0082","#2f4fba","#87c8fa"
+    ];
+    let currentKey=null;
+    const pickerOverlay=document.getElementById('pickerOverlay');
+    const picker=document.getElementById('picker');
+    const swatchesEl=document.getElementById('swatches');
+    const preview=document.getElementById('preview');
+    const hexInput=document.getElementById('hexInput');
+    const cancelPick=document.getElementById('cancelPick');
+    const applyPick=document.getElementById('applyPick');
+
+    // baue Swatches
+    palette.forEach(col=>{
+      const d=document.createElement('div');
+      d.className='swatch'; d.style.background=col;
+      d.addEventListener('click',()=>setPreview(col));
+      swatchesEl.appendChild(d);
+    });
+    function setPreview(col){
+      preview.style.background=col;
+      hexInput.value = /^#/.test(col)?col:('#'+col);
+    }
+    function openPicker(key){
+      currentKey=key;
+      const current=localStorage.getItem('color-'+key) || defaults[key];
+      setPreview(current);
+      pickerOverlay.style.display='block';
+      picker.style.display='block';
+    }
+    function closePicker(){
+      pickerOverlay.style.display='none';
+      picker.style.display='none';
+      currentKey=null;
+    }
+    pickerOverlay.addEventListener('click', closePicker);
+    cancelPick.addEventListener('click', closePicker);
+    applyPick.addEventListener('click', ()=>{
+      let val=hexInput.value.trim();
+      if(!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(val)) return; // einfache Validierung
+      applyColor(currentKey,val);
+      closePicker();
+    });
+
+    // Chips klickbar machen
+    Object.keys(mapping).forEach(key=>{
+      document.getElementById(mapping[key]).addEventListener('click', ()=>openPicker(key));
+    });
   </script>
 </body>
 </html>
