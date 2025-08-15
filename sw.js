@@ -1,5 +1,5 @@
 // sw.js — robuste Versionierung + Update-Strategie
-const CACHE_VERSION = 'v6';                           // <- bei jedem Release hochzählen
+const CACHE_VERSION = 'v7';                           // <- bei jedem Release hochzählen
 const STATIC_CACHE  = `cubeclock-static-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {
@@ -8,7 +8,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       // Nur die wirklich statischen Sachen hier vorcachen
-      // index.html holen wir immer "network-first" (siehe fetch)
+      // index.html holen wir immer "network-first" 
       return cache.addAll([
         './',
         'manifest.json',
