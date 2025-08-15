@@ -13,7 +13,7 @@
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   </script>
   <style>
-    /* ===== dein Würfel – unverändert ===== */
+    /* ===== Würfel (unverändert) ===== */
     body{margin:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;
       height:100vh;font-family:'Space Mono',monospace;overflow:hidden;touch-action:none;}
     .scene{width:63vmin;height:63vmin;perspective:1100px;margin-bottom:90px;}
@@ -55,66 +55,40 @@
 
     /* ===== Settings UI ===== */
     #settingsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:150;}
-
-    /* ► Zahnrad mit deutlicherem Rahmen (bleibt sichtbar auf hellem/dunklem BG) */
     #settingsButton{
       position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);
-      left:calc(env(safe-area-inset-left,0px) + 12px);
-      width:44px;height:44px;padding:8px;background:#222;
-      border:1.5px solid rgba(255,255,255,.35); /* sichtbarer Rahmen */
-      border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.35);
-      cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;
+      left:calc(env(safe-area-inset-left,0px) + 12px);width:44px;height:44px;padding:8px;background:#222;
+      border:1px solid rgba(255,255,255,.14); /* kleine Rahmenkante */
+      border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer;z-index:200;
     }
-    #settingsButton img{width:28px;height:28px;display:block;filter:drop-shadow(0 0 2px rgba(0,0,0,.3));}
-
-    /* kompakter & immer vollständig sichtbar */
+    #settingsButton img{width:28px;height:28px;display:block;}
     #settingsPanel{
-      position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);
-      left:calc(env(safe-area-inset-left,0px) + 12px);
-      display:none;z-index:180;width:clamp(240px,86vw,340px);
-      max-height:calc(100dvh - 96px); /* dynamische Höhe, damit Close nicht abgeschnitten wird */
-      overflow:auto;overscroll-behavior:contain;
-      background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;color:#fff;
-      box-shadow:0 18px 40px rgba(0,0,0,.5);
-      padding:14px 12px 18px;  /* extra Bottom-Padding für Button-Reihe */
+      position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);left:calc(env(safe-area-inset-left,0px) + 12px);
+      display:none;z-index:180;width:clamp(240px,88vw,340px);max-height:calc(100vh - 90px);overflow:auto;
+      background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.5);
+      padding:16px 14px 12px;
+      font-size:17px; /* ← minimal größere Schrift im Panel */
     }
     #panelArrow{position:fixed;display:none;z-index:181;top:calc(env(safe-area-inset-top,0px) + 54px);
       left:calc(env(safe-area-inset-left,0px) + 36px);width:0;height:0;border-left:10px solid transparent;
       border-right:10px solid transparent;border-bottom:12px solid #222;}
-    #settingsPanel h3{margin:0 0 10px;font-size:18px;letter-spacing:.5px;}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:15px;color:#eaeaea;margin:8px 0;}
-    .chip{width:50px;height:28px;border:4px solid #fff;border-radius:8px;
+    #settingsPanel h3{margin:0 0 12px;font-size:20px;letter-spacing:.5px;}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#eaeaea;margin:9px 0;}
+    .chip{width:52px;height:30px;border:4px solid #fff;border-radius:8px;
       box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.25);cursor:pointer;position:relative;background:#000;}
     .chip::after{content:"";position:absolute;inset:4px;border-radius:6px;background:var(--chip,#000);}
-    .btn{display:block;width:100%;margin-top:10px;padding:9px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
-      background:#2b2b2b;color:#e8e8e8;font-size:14px;text-align:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),
-      0 2px 10px rgba(0,0,0,.25);}
+    .section{margin-top:14px;padding:12px;border-radius:14px;background:#1f1f1f;border:1px solid rgba(255,255,255,.08);}
+
+    .btn{display:block;width:100%;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
+      background:#2b2b2b;color:#e8e8e8;font-size:15px;text-align:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),
+      0 2px 10px rgba(0,0,0,.25);transition:background .15s, box-shadow .15s, border-color .15s;}
     .btn:hover{background:#3a3a3a;}
+    /* persistenter Active-Zustand */
+    .btn.active{background:#3a3f48;border-color:#5b6bff;box-shadow:0 0 0 2px rgba(91,107,255,.25) inset;}
 
-    /* kleineren Bildschirmen noch etwas kompakter */
-    @media (max-height:700px){
-      #settingsPanel{width:clamp(230px,90vw,320px);padding:12px 10px 16px;max-height:calc(100dvh - 88px);}
-      #settingsPanel h3{font-size:17px}
-      .row{font-size:14px;margin:7px 0}
-      .chip{width:46px;height:26px}
-      .btn{font-size:13px;padding:8px 9px}
-    }
-    @media (max-height:580px){
-      #settingsPanel{max-height:calc(100dvh - 80px)}
-      .row{font-size:13px}
-    }
+    @media (max-width:360px){#settingsPanel{width:clamp(220px,92vw,300px)} .row{font-size:16px} .chip{width:48px;height:28px} .btn{font-size:14px}}
 
-    /* --- Auto reset Block (kompakter) --- */
-    .reset-block{margin-top:10px;padding:9px;border-radius:14px;background:#1f1f1f;border:1px solid rgba(255,255,255,.06)}
-    .reset-row{display:flex;align-items:center;gap:10px;margin-top:6px}
-    .reset-row label{font-size:13px;opacity:.9}
-    .reset-row input[type="checkbox"]{transform:scale(1.05)}
-    .reset-row input[type="number"]{
-      width:100px;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
-      padding:6px 8px;font-size:13px;
-    }
-
-    /* ===== Custom RGB Picker (Zahl-Felder etwas kleiner) ===== */
+    /* ===== RGB Color Picker ===== */
     #pickerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:300;}
     #picker{
       position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);
@@ -131,10 +105,7 @@
     .rgb-row{display:flex;gap:8px;margin-top:10px}
     .rgb-row .cell{flex:1}
     .rgb-row label{display:block;font-size:12px;opacity:.85;margin-bottom:4px}
-    .rgb-row input{
-      width:100%;max-width:90px;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
-      padding:4px 6px;font-size:12px;line-height:1.2; /* ► kleiner */
-    }
+    .rgb-row input{width:100%;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;padding:6px 8px;font-family:inherit} /* leicht kleiner */
     #preview{height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);margin:10px 0;background:#000}
     .picker-actions{display:flex;gap:10px;margin-top:8px}
     .picker-actions button{flex:1;border:none;border-radius:12px;padding:10px 12px;background:#3a3a3a;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
@@ -166,29 +137,31 @@
 
   <div id="settingsPanel" role="dialog" aria-label="Settings">
     <h3>Change colors</h3>
-    <div class="row">Hour:       <div class="chip" id="chipHours"   data-key="hours"></div></div>
-    <div class="row">Minute:     <div class="chip" id="chipMinutes" data-key="minutes"></div></div>
-    <div class="row">Second:     <div class="chip" id="chipSeconds" data-key="seconds"></div></div>
-    <div class="row">Year:       <div class="chip" id="chipYear"    data-key="year"></div></div>
-    <div class="row">Month:      <div class="chip" id="chipMonth"   data-key="month"></div></div>
-    <div class="row">Day:        <div class="chip" id="chipDay"     data-key="day"></div></div>
-    <div class="row">Cube faces: <div class="chip" id="chipCube"    data-key="cube"></div></div>
+    <div class="row">Hour:   <div class="chip" id="chipHours"   data-key="hours"></div></div>
+    <div class="row">Minute: <div class="chip" id="chipMinutes" data-key="minutes"></div></div>
+    <div class="row">Second: <div class="chip" id="chipSeconds" data-key="seconds"></div></div>
+    <div class="row">Year:   <div class="chip" id="chipYear"    data-key="year"></div></div>
+    <div class="row">Month:  <div class="chip" id="chipMonth"   data-key="month"></div></div>
+    <div class="row">Day:    <div class="chip" id="chipDay"     data-key="day"></div></div>
+    <div class="row">Cube:   <div class="chip" id="chipCube"    data-key="cube"></div></div>
     <div class="row">Background: <div class="chip" id="chipBackground" data-key="background"></div></div>
 
-    <div class="reset-block">
-      <strong>Auto reset</strong>
-      <div class="reset-row">
-        <input type="checkbox" id="autoResetEnable">
-        <label for="autoResetEnable">Enable</label>
-      </div>
-      <div class="reset-row">
-        <label for="autoResetSeconds">Seconds</label>
-        <input type="number" id="autoResetSeconds" min="1" max="3600" step="1" placeholder="10">
-      </div>
+    <div class="section">
+      <div style="font-weight:700;margin-bottom:8px;">Auto reset</div>
+      <label style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <input id="autoResetToggle" type="checkbox" />
+        <span>Enable</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;">
+        <span>Seconds</span>
+        <input id="autoResetSeconds" type="number" min="1" max="600" step="1"
+               style="flex:1;max-width:150px;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);
+               color:#fff;border-radius:10px;padding:8px 10px;">
+      </label>
     </div>
 
     <button class="btn" type="button" id="btnDefaults">Reset to defaults</button>
-    <button class="btn" type="button" onclick="toggleCube()">Time/Date (space)</button>
+    <button class="btn" type="button" id="btnToggle">Time/Date (space)</button>
     <button class="btn" type="button" id="closeSettingsBtn">Close</button>
   </div>
 
@@ -235,11 +208,7 @@
       cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}
     function resetToClockView(){if(showingDate||userRotated){showingDate=false;userRotated=false;rotateX=-30;rotateY=45;
       cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}}
-    function startInactivityTimer(){
-      clearTimeout(inactivityTimer);
-      if(!autoResetEnabled) return;
-      inactivityTimer=setTimeout(resetToClockView, autoResetSeconds*1000);
-    }
+    function startInactivityTimer(){clearTimeout(inactivityTimer);inactivityTimer=setTimeout(resetToClockView, autoResetMs());}
     cube.addEventListener("mousedown",e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;});
     document.addEventListener("mouseup",()=>{isDragging=false;});
     document.addEventListener("mousemove",e=>{if(!isDragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;
@@ -260,29 +229,63 @@
     const panelArrow=document.getElementById('panelArrow');
     const closeSettingsBtn=document.getElementById('closeSettingsBtn');
     const btnDefaults=document.getElementById('btnDefaults');
+    const btnToggle=document.getElementById('btnToggle');
+
     function openSettings(){settingsOverlay.style.display='block';settingsPanel.style.display='block';panelArrow.style.display='block';}
     function closeSettings(){settingsOverlay.style.display='none';settingsPanel.style.display='none';panelArrow.style.display='none';}
     settingsBtn.addEventListener('click',()=> (settingsPanel.style.display==='block'?closeSettings():openSettings()));
-    settingsOverlay.addEventListener('click',closeSettings);closeSettingsBtn.addEventListener('click',closeSettings);
+    settingsOverlay.addEventListener('click',closeSettings);closeSettingsBtn.addEventListener('click',()=>{setActiveBtn(closeSettingsBtn);closeSettings();});
 
-    /* ===== Farben (inkl. „Settings-Button = Background“) ===== */
+    /* ===== Farben: speichern / anwenden ===== */
     const mapping={hours:"chipHours",minutes:"chipMinutes",seconds:"chipSeconds",year:"chipYear",month:"chipMonth",day:"chipDay",cube:"chipCube",background:"chipBackground"};
     const defaults={hours:"#e71f1b",minutes:"#ff8c42",seconds:"#fff275",year:"#4B0082",month:"#2f4fba",day:"#87c8fa",cube:"#111111",background:"#000000"};
+
     function setChipColor(key,val){document.getElementById(mapping[key]).style.setProperty('--chip',val);}
     function applyColor(key,val){
       if(key==='cube'){document.querySelectorAll('.face').forEach(f=>f.style.background=val);}
       else if(key==='background'){
         document.body.style.background=val;
-        settingsBtn.style.background = val;                /* Button nimmt BG an */
-        settingsBtn.style.borderColor = 'rgba(255,255,255,.35)'; /* sichtbarer Rahmen bleibt */
-      }else{
+        // Zahnrad-Button an Hintergrund koppeln
+        document.getElementById('settingsButton').style.background = val;
+      } else {
         document.getElementById(key).style.color=val;
       }
       localStorage.setItem('color-'+key,val);setChipColor(key,val);
     }
     function applySavedColors(){Object.keys(mapping).forEach(k=>applyColor(k, localStorage.getItem('color-'+k)||defaults[k]));}
     function resetToDefaultColors(){Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k));applySavedColors();}
-    btnDefaults.addEventListener('click',resetToDefaultColors);
+    window.addEventListener('load',()=>{if(!localStorage.getItem('visitedBefore')){localStorage.setItem('visitedBefore','true');resetToDefaultColors();}else{applySavedColors();}});
+
+    /* ===== Persistenter Button-Active-Status ===== */
+    const bottomBtns=[btnDefaults, btnToggle, closeSettingsBtn];
+    function setActiveBtn(el){
+      bottomBtns.forEach(b=>b.classList.toggle('active', b===el));
+    }
+    btnDefaults.addEventListener('click',()=>{resetToDefaultColors();setActiveBtn(btnDefaults);});
+    btnToggle.addEventListener('click',()=>{toggleCube();setActiveBtn(btnToggle);});
+    // closeSettingsBtn bekommt setActiveBtn oben beim Click + Close
+
+    /* ===== Auto-Reset Steuerung ===== */
+    const autoToggle = document.getElementById('autoResetToggle');
+    const autoSeconds= document.getElementById('autoResetSeconds');
+
+    // Standard: aktiviert & 10s
+    const savedEnable = localStorage.getItem('autoResetEnable');
+    const savedSecs   = localStorage.getItem('autoResetSeconds');
+    autoToggle.checked = savedEnable === null ? true : savedEnable === 'true';
+    autoSeconds.value  = savedSecs === null ? 10 : Math.max(1, +savedSecs|0);
+
+    function autoResetMs(){
+      return autoToggle.checked ? Math.max(1,+autoSeconds.value|0)*1000 : 1e9; // „aus“ = sehr groß
+    }
+    autoToggle.addEventListener('change',()=>{
+      localStorage.setItem('autoResetEnable', autoToggle.checked);
+      startInactivityTimer();
+    });
+    autoSeconds.addEventListener('input',()=>{
+      localStorage.setItem('autoResetSeconds', Math.max(1,+autoSeconds.value|0));
+      startInactivityTimer();
+    });
 
     /* ====== RGB Picker ====== */
     const pickerOverlay=document.getElementById('pickerOverlay');
@@ -292,9 +295,7 @@
     const Rin=document.getElementById('r'), Gin=document.getElementById('g'), Bin=document.getElementById('b');
     let currentKey=null, hue=0, sat=1, val=1; // HSV
 
-    const labels={hours:"Hour",minutes:"Minute",seconds:"Second",year:"Year",month:"Month",day:"Day",cube:"Cube faces",background:"Background"};
-
-    function hsv2rgb(h,s,v){let f=(n,k=(n+h/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return [f(5),f(3),f(1)].map(x=>Math.round(x*255));}
+    function hsv2rgb(hh,s,v){let f=(n,k=(n+hh/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return [f(5),f(3),f(1)].map(x=>Math.round(x*255));}
     function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,v=max;const d=max-min;s=max===0?0:d/max;
       if(max===min){h=0}else{switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}h*=60}
       return [h,s,v]}
@@ -309,10 +310,12 @@
       svc.style.left = (sat * w - svc.offsetWidth/2)+'px';
       svc.style.top  = ((1-val) * hgt - svc.offsetHeight/2)+'px';
     }
+
     function setFromHSV(hh,ss,vv){hue=hh; sat=Math.min(1,Math.max(0,ss)); val=Math.min(1,Math.max(0,vv));
       const [r,g,b]=hsv2rgb(hue,sat,val);
       preview.style.background=`rgb(${r},${g},${b})`;
-      Rin.value=r; Gin.value=g; Bin.value=b; drawSV();
+      Rin.value=r; Gin.value=g; Bin.value=b;
+      drawSV();
     }
     function setFromRGB(r,g,b){
       r=Math.min(255,Math.max(0,+r|0)); g=Math.min(255,Math.max(0,+g|0)); b=Math.min(255,Math.max(0,+b|0));
@@ -323,7 +326,6 @@
 
     function openPicker(key){
       currentKey=key;
-      picker.querySelector('h4').textContent = `${labels[key] || 'Select'} – Select color`;
       const col = localStorage.getItem('color-'+key) || defaults[key];
       const r=parseInt(col.slice(1,3),16), g=parseInt(col.slice(3,5),16), b=parseInt(col.slice(5,7),16);
       setFromRGB(r,g,b);
@@ -333,6 +335,7 @@
     function closePicker(){pickerOverlay.style.display='none'; picker.style.display='none'; currentKey=null;}
     pickerOverlay.addEventListener('click',closePicker);
     document.getElementById('cancelPick').addEventListener('click',closePicker);
+
     h.addEventListener('input',()=> setFromHSV(+h.value, sat, val));
     Rin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
     Gin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
@@ -358,41 +361,9 @@
       applyColor(currentKey, hex);
       closePicker();
     });
+
     Object.keys(mapping).forEach(k=>{
       document.getElementById(mapping[k]).addEventListener('click',()=>openPicker(k));
-    });
-
-    /* ===== Auto‑Reset Zustand laden/speichern ===== */
-    const autoResetEnableEl = document.getElementById('autoResetEnable');
-    const autoResetSecondsEl = document.getElementById('autoResetSeconds');
-    let autoResetEnabled = localStorage.getItem('autoResetEnabled') === 'false' ? false : true; // default: true
-    let autoResetSeconds = parseInt(localStorage.getItem('autoResetSeconds') || '10', 10);
-
-    function syncResetUI(){
-      autoResetEnableEl.checked = autoResetEnabled;
-      autoResetSecondsEl.value = autoResetSeconds;
-      autoResetSecondsEl.disabled = !autoResetEnabled;
-    }
-    autoResetEnableEl.addEventListener('change',()=>{
-      autoResetEnabled = autoResetEnableEl.checked;
-      localStorage.setItem('autoResetEnabled', String(autoResetEnabled));
-      autoResetSecondsEl.disabled = !autoResetEnabled;
-      startInactivityTimer();
-    });
-    autoResetSecondsEl.addEventListener('input',()=>{
-      const v = Math.max(1, Math.min(3600, parseInt(autoResetSecondsEl.value||'10',10)));
-      autoResetSeconds = v;
-      localStorage.setItem('autoResetSeconds', String(autoResetSeconds));
-      startInactivityTimer();
-    });
-
-    window.addEventListener('load',()=>{
-      if(!localStorage.getItem('visitedBefore')){
-        localStorage.setItem('visitedBefore','true');
-        Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k));
-      }
-      applySavedColors();
-      syncResetUI();
     });
   </script>
 </body>
