@@ -75,9 +75,6 @@ ob verwendete Assets (Icons, Schriftarten) lizenziert sind.
 
 ---
 
-## 🖼️ Vorschau
-
-*(Hier kannst du einen Screenshot deines CubeClock-Projekts einfügen)*
 
 ---
 
