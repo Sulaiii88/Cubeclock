@@ -55,46 +55,66 @@
 
     /* ===== Settings UI ===== */
     #settingsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:150;}
+
+    /* ► Zahnrad mit deutlicherem Rahmen (bleibt sichtbar auf hellem/dunklem BG) */
     #settingsButton{
       position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);
-      left:calc(env(safe-area-inset-left,0px) + 12px);width:44px;height:44px;padding:8px;
-      background:#222; /* -> wird dynamisch auf Background-Farbe gesetzt */
-      border:1px solid rgba(255,255,255,.10);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.35);
+      left:calc(env(safe-area-inset-left,0px) + 12px);
+      width:44px;height:44px;padding:8px;background:#222;
+      border:1.5px solid rgba(255,255,255,.35); /* sichtbarer Rahmen */
+      border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.35);
       cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;
     }
     #settingsButton img{width:28px;height:28px;display:block;filter:drop-shadow(0 0 2px rgba(0,0,0,.3));}
 
+    /* kompakter & immer vollständig sichtbar */
     #settingsPanel{
-      position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);left:calc(env(safe-area-inset-left,0px) + 12px);
-      display:none;z-index:180;width:clamp(240px,88vw,340px);max-height:calc(100vh - 90px);overflow:auto;
-      background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.5);
-      padding:16px 14px 12px;
+      position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);
+      left:calc(env(safe-area-inset-left,0px) + 12px);
+      display:none;z-index:180;width:clamp(240px,86vw,340px);
+      max-height:calc(100dvh - 96px); /* dynamische Höhe, damit Close nicht abgeschnitten wird */
+      overflow:auto;overscroll-behavior:contain;
+      background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;color:#fff;
+      box-shadow:0 18px 40px rgba(0,0,0,.5);
+      padding:14px 12px 18px;  /* extra Bottom-Padding für Button-Reihe */
     }
     #panelArrow{position:fixed;display:none;z-index:181;top:calc(env(safe-area-inset-top,0px) + 54px);
       left:calc(env(safe-area-inset-left,0px) + 36px);width:0;height:0;border-left:10px solid transparent;
       border-right:10px solid transparent;border-bottom:12px solid #222;}
-    #settingsPanel h3{margin:0 0 12px;font-size:18px;letter-spacing:.5px;}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px;color:#eaeaea;margin:9px 0;}
-    .chip{width:52px;height:30px;border:4px solid #fff;border-radius:8px;
+    #settingsPanel h3{margin:0 0 10px;font-size:18px;letter-spacing:.5px;}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:15px;color:#eaeaea;margin:8px 0;}
+    .chip{width:50px;height:28px;border:4px solid #fff;border-radius:8px;
       box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.25);cursor:pointer;position:relative;background:#000;}
     .chip::after{content:"";position:absolute;inset:4px;border-radius:6px;background:var(--chip,#000);}
-    .btn{display:block;width:100%;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
-      background:#2b2b2b;color:#e8e8e8;font-size:15px;text-align:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),
+    .btn{display:block;width:100%;margin-top:10px;padding:9px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
+      background:#2b2b2b;color:#e8e8e8;font-size:14px;text-align:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),
       0 2px 10px rgba(0,0,0,.25);}
     .btn:hover{background:#3a3a3a;}
-    @media (max-width:360px){#settingsPanel{width:clamp(220px,92vw,300px)} .row{font-size:15px} .chip{width:48px;height:28px} .btn{font-size:14px}}
 
-    /* --- Auto reset Block --- */
-    .reset-block{margin-top:12px;padding:10px;border-radius:14px;background:#1f1f1f;border:1px solid rgba(255,255,255,.06)}
-    .reset-row{display:flex;align-items:center;gap:10px;margin-top:8px}
-    .reset-row label{font-size:14px;opacity:.9}
-    .reset-row input[type="checkbox"]{transform:scale(1.1)}
-    .reset-row input[type="number"]{
-      width:110px;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
-      padding:6px 8px;font-size:14px;
+    /* kleineren Bildschirmen noch etwas kompakter */
+    @media (max-height:700px){
+      #settingsPanel{width:clamp(230px,90vw,320px);padding:12px 10px 16px;max-height:calc(100dvh - 88px);}
+      #settingsPanel h3{font-size:17px}
+      .row{font-size:14px;margin:7px 0}
+      .chip{width:46px;height:26px}
+      .btn{font-size:13px;padding:8px 9px}
+    }
+    @media (max-height:580px){
+      #settingsPanel{max-height:calc(100dvh - 80px)}
+      .row{font-size:13px}
     }
 
-    /* ===== Custom RGB Picker (unverändert bis auf Input-Größe) ===== */
+    /* --- Auto reset Block (kompakter) --- */
+    .reset-block{margin-top:10px;padding:9px;border-radius:14px;background:#1f1f1f;border:1px solid rgba(255,255,255,.06)}
+    .reset-row{display:flex;align-items:center;gap:10px;margin-top:6px}
+    .reset-row label{font-size:13px;opacity:.9}
+    .reset-row input[type="checkbox"]{transform:scale(1.05)}
+    .reset-row input[type="number"]{
+      width:100px;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
+      padding:6px 8px;font-size:13px;
+    }
+
+    /* ===== Custom RGB Picker (Zahl-Felder etwas kleiner) ===== */
     #pickerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:300;}
     #picker{
       position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);
@@ -111,7 +131,10 @@
     .rgb-row{display:flex;gap:8px;margin-top:10px}
     .rgb-row .cell{flex:1}
     .rgb-row label{display:block;font-size:12px;opacity:.85;margin-bottom:4px}
-    .rgb-row input{width:100%;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;padding:6px 8px;font-size:13px;line-height:1.2}
+    .rgb-row input{
+      width:100%;max-width:90px;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
+      padding:4px 6px;font-size:12px;line-height:1.2; /* ► kleiner */
+    }
     #preview{height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);margin:10px 0;background:#000}
     .picker-actions{display:flex;gap:10px;margin-top:8px}
     .picker-actions button{flex:1;border:none;border-radius:12px;padding:10px 12px;background:#3a3a3a;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
@@ -152,7 +175,6 @@
     <div class="row">Cube faces: <div class="chip" id="chipCube"    data-key="cube"></div></div>
     <div class="row">Background: <div class="chip" id="chipBackground" data-key="background"></div></div>
 
-    <!-- Neu: Auto reset Block -->
     <div class="reset-block">
       <strong>Auto reset</strong>
       <div class="reset-row">
@@ -215,7 +237,7 @@
       cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}}
     function startInactivityTimer(){
       clearTimeout(inactivityTimer);
-      if(!autoResetEnabled) return; // respektiere den Schalter
+      if(!autoResetEnabled) return;
       inactivityTimer=setTimeout(resetToClockView, autoResetSeconds*1000);
     }
     cube.addEventListener("mousedown",e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;});
@@ -243,7 +265,7 @@
     settingsBtn.addEventListener('click',()=> (settingsPanel.style.display==='block'?closeSettings():openSettings()));
     settingsOverlay.addEventListener('click',closeSettings);closeSettingsBtn.addEventListener('click',closeSettings);
 
-    /* ===== Farben, inkl. „Settings-Button = Background“ ===== */
+    /* ===== Farben (inkl. „Settings-Button = Background“) ===== */
     const mapping={hours:"chipHours",minutes:"chipMinutes",seconds:"chipSeconds",year:"chipYear",month:"chipMonth",day:"chipDay",cube:"chipCube",background:"chipBackground"};
     const defaults={hours:"#e71f1b",minutes:"#ff8c42",seconds:"#fff275",year:"#4B0082",month:"#2f4fba",day:"#87c8fa",cube:"#111111",background:"#000000"};
     function setChipColor(key,val){document.getElementById(mapping[key]).style.setProperty('--chip',val);}
@@ -251,9 +273,8 @@
       if(key==='cube'){document.querySelectorAll('.face').forEach(f=>f.style.background=val);}
       else if(key==='background'){
         document.body.style.background=val;
-        // ► Zahnrad-Button an Background anpassen
-        settingsBtn.style.background = val;
-        settingsBtn.style.borderColor = 'rgba(255,255,255,.10)';
+        settingsBtn.style.background = val;                /* Button nimmt BG an */
+        settingsBtn.style.borderColor = 'rgba(255,255,255,.35)'; /* sichtbarer Rahmen bleibt */
       }else{
         document.getElementById(key).style.color=val;
       }
@@ -347,7 +368,6 @@
     let autoResetEnabled = localStorage.getItem('autoResetEnabled') === 'false' ? false : true; // default: true
     let autoResetSeconds = parseInt(localStorage.getItem('autoResetSeconds') || '10', 10);
 
-    // UI initial
     function syncResetUI(){
       autoResetEnableEl.checked = autoResetEnabled;
       autoResetSecondsEl.value = autoResetSeconds;
@@ -366,7 +386,6 @@
       startInactivityTimer();
     });
 
-    // Farben beim Start anwenden + Reset-UI setzen
     window.addEventListener('load',()=>{
       if(!localStorage.getItem('visitedBefore')){
         localStorage.setItem('visitedBefore','true');
