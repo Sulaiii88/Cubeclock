@@ -1,97 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!--
+    CubeClock – kommentierte Version
+    Ziel: Nur erklären, was wo passiert (ohne irgendetwas zu verändern).
+    - PWA-Setup (Manifest, Service Worker)
+    - 3D-Würfel mit Zeit/Datum
+    - Einstellungs-Panel (Farben, Auto-Reset)
+    - Eigenes RGB-Color-Picker-Modal
+  -->
   <meta charset="UTF-8" />
   <title>CubeClock</title>
+
+  <!-- Sorgt dafür, dass die Seite auf mobilen Geräten korrekt skaliert -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Monospace Schrift, wie im Original -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
+
+  <!-- PWA: Manifest einbinden -->
   <link rel="manifest" href="manifest.json" />
+
+  <!-- PWA: Theme-Farbe (Adresse/Status-Balken) -->
   <meta name="theme-color" content="#000000" />
+  <!-- PWA: Vollbild auf iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
   <script>
+    // Service Worker registrieren (für PWA-Offline-Funktion etc.)
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   </script>
-  <style>
-    /* ===== dein Würfel – unverändert ===== */
-    body{margin:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;
-      height:100vh;font-family:'Space Mono',monospace;overflow:hidden;touch-action:none;}
-    .scene{width:63vmin;height:63vmin;perspective:1100px;margin-bottom:90px;}
-    .cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 1s ease;
-      transform:rotateX(-30deg) rotateY(45deg);}
-    .face{position:absolute;width:100%;height:100%;background:linear-gradient(to bottom right,#000,#111);color:#fff;
-      font-size:calc(63vmin / 1.5);letter-spacing:-5px;display:flex;justify-content:center;align-items:center;
-      border:1px solid #555;backface-visibility:hidden;}
-    .scene,.cube,.face{user-select:none;outline:none;}
-    #hours{color:#e71f1b;} #minutes{color:#ff8c42;} #seconds{color:#fff275;}
-    #year{color:#4B0082;} #day{color:#87c8fa;}
-    #month{color:#2f4fba;font-size:calc(63vmin / 2);font-weight:bold;}
-    .front{transform:rotateY( 90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg);}
-    .back {transform:rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg);}
-    .right{transform:rotateY(  0deg) translateZ(31.5vmin);}
-    .left {transform:rotateY(-90deg) translateZ(31.5vmin);}
-    .top  {transform:rotateX( 90deg) translateZ(31.5vmin);}
-    .bottom{transform:rotateX(-90deg) translateZ(31.5vmin);}
 
-    #toggleButton{position:fixed;left:50%;transform:translateX(-50%);bottom:5vh;padding:1px 100px;border:none;outline:none;
-      box-shadow:none;border-radius:10px;background:#444;cursor:pointer;z-index:10;}
+  <style>
+    /* =========================
+       3D-WÜRFEL (unverändert)
+       ========================= */
+
+    /* Grundlayout: Vollbild, zentriert, keine Scrollbars; Touch-Eingaben erlaubt */
+    body{
+      margin:0;
+      background:#000;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      font-family:'Space Mono',monospace;
+      overflow:hidden;
+      touch-action:none;
+    }
+
+    /* Szene legt Größe + Perspektive fest (vmin skaliert mit Viewport) */
+    .scene{
+      width:63vmin;
+      height:63vmin;
+      perspective:1100px;
+      margin-bottom:90px; /* Platz für den Spacebar-Button */
+    }
+
+    /* Der eigentliche Würfel (preserve-3d lässt alle Flächen im Raum stehen) */
+    .cube{
+      width:100%;
+      height:100%;
+      position:relative;
+      transform-style:preserve-3d;
+      transition:transform 1s ease;      /* weiches Drehen */
+      transform:rotateX(-30deg) rotateY(45deg); /* Startwinkel */
+    }
+
+    /* Eine Würfelfläche: Größe, Hintergrund, Rahmen, große Schrift */
+    .face{
+      position:absolute;
+      width:100%;
+      height:100%;
+      background:linear-gradient(to bottom right,#000,#111);
+      color:#fff;
+      font-size:calc(63vmin / 1.5);
+      letter-spacing:-5px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      border:1px solid #555;
+      backface-visibility:hidden; /* Rückseite nicht durchscheinen lassen */
+    }
+
+    /* Selektion & Outline deaktivieren (rein optisch) */
+    .scene,.cube,.face{user-select:none;outline:none;}
+
+    /* Farbcodierung pro Seite (Zeit/Datum) */
+    #hours{color:#e71f1b;}
+    #minutes{color:#ff8c42;}
+    #seconds{color:#fff275;}
+    #year{color:#4B0082;}
+    #day{color:#87c8fa;}
+
+    /* Monatsfläche etwas andere Schriftgröße */
+    #month{
+      color:#2f4fba;
+      font-size:calc(63vmin / 2);
+      font-weight:bold;
+    }
+
+    /* 3D-Positionen der sechs Flächen (je 31.5vmin = halbe Kantenlänge) */
+    .front{ transform:rotateY( 90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .back { transform:rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .right{ transform:rotateY(  0deg) translateZ(31.5vmin); }
+    .left { transform:rotateY(-90deg) translateZ(31.5vmin); }
+    .top  { transform:rotateX( 90deg) translateZ(31.5vmin); }
+    .bottom{ transform:rotateX(-90deg) translateZ(31.5vmin); }
+
+    /* Spacebar-Button (zum Umschalten Zeit/Datum) */
+    #toggleButton{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:5vh;
+      padding:1px 100px;
+      border:none;
+      outline:none;
+      box-shadow:none;
+      border-radius:10px;
+      background:#444;
+      cursor:pointer;
+      z-index:10;
+    }
     #toggleButton:hover{background:#666;}
     #toggleButton img{width:30px;height:auto;display:block;}
 
+    /* Desktop: Würfel etwas kleiner, passende Z-Offsets */
     @media (min-width:601px){
       .scene{width:50vmin;height:50vmin;}
       .face{font-size:calc(50vmin / 1.5);}
       #month{font-size:calc(50vmin / 2);}
-      .front{transform:rotateY( 90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg);}
-      .back {transform:rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg);}
-      .right{transform:rotateY(  0deg) translateZ(25vmin);}
-      .left {transform:rotateY(-90deg) translateZ(25vmin);}
-      .top  {transform:rotateX( 90deg) translateZ(25vmin);}
-      .bottom{transform:rotateX(-90deg) translateZ(25vmin);}
+      .front{ transform:rotateY( 90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .back { transform:rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .right{ transform:rotateY(  0deg) translateZ(25vmin); }
+      .left { transform:rotateY(-90deg) translateZ(25vmin); }
+      .top  { transform:rotateX( 90deg) translateZ(25vmin); }
+      .bottom{ transform:rotateX(-90deg) translateZ(25vmin); }
     }
+
+    /* Installierte PWA auf kleinen Geräten: Würfel größer skalieren */
     @media (display-mode:standalone) and (max-width:600px){
       .scene{transform:scale(3);transform-origin:center;}
     }
 
-    /* ===== Settings UI ===== */
-    #settingsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:150;}
+    /* =========================
+       SETTINGS-UI (Zahnrad)
+       ========================= */
 
-    /* ► Zahnrad mit deutlicherem Rahmen (bleibt sichtbar auf hellem/dunklem BG) */
+    /* Abdunkelung hinter dem Panel */
+    #settingsOverlay{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,.45);
+      display:none;
+      z-index:150;
+    }
+
+    /* Zahnrad-Button links oben (mit sichtbarem Rahmen) */
     #settingsButton{
-      position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);
+      position:fixed;
+      top:calc(env(safe-area-inset-top,0px) + 12px);
       left:calc(env(safe-area-inset-left,0px) + 12px);
-      width:44px;height:44px;padding:8px;background:#222;
-      border:1.5px solid rgba(255,255,255,.35); /* sichtbarer Rahmen */
-      border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.35);
-      cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;
+      width:44px;height:44px;
+      padding:8px;
+      background:#222; /* wird später an Hintergrundfarbe gekoppelt */
+      border:1.5px solid rgba(255,255,255,.35);
+      border-radius:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.35);
+      cursor:pointer;
+      z-index:200;
+      display:flex;align-items:center;justify-content:center;
     }
-    #settingsButton img{width:28px;height:28px;display:block;filter:drop-shadow(0 0 2px rgba(0,0,0,.3));}
+    #settingsButton img{
+      width:28px;height:28px;display:block;
+      filter:drop-shadow(0 0 2px rgba(0,0,0,.3));
+    }
 
-    /* kompakter & immer vollständig sichtbar */
+    /* Panel selbst (schwebende Karte) */
     #settingsPanel{
-      position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);
+      position:fixed;
+      top:calc(env(safe-area-inset-top,0px) + 62px);
       left:calc(env(safe-area-inset-left,0px) + 12px);
-      display:none;z-index:180;width:clamp(240px,86vw,340px);
-      max-height:calc(100dvh - 96px); /* dynamische Höhe, damit Close nicht abgeschnitten wird */
-      overflow:auto;overscroll-behavior:contain;
-      background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;color:#fff;
+      display:none;
+      z-index:180;
+      width:clamp(240px,86vw,340px);
+      max-height:calc(100dvh - 96px);   /* Close-Button bleibt sichtbar */
+      overflow:auto;
+      overscroll-behavior:contain;
+      background:#222;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      color:#fff;
       box-shadow:0 18px 40px rgba(0,0,0,.5);
-      padding:14px 12px 18px;  /* extra Bottom-Padding für Button-Reihe */
+      padding:14px 12px 18px;
     }
-    #panelArrow{position:fixed;display:none;z-index:181;top:calc(env(safe-area-inset-top,0px) + 54px);
-      left:calc(env(safe-area-inset-left,0px) + 36px);width:0;height:0;border-left:10px solid transparent;
-      border-right:10px solid transparent;border-bottom:12px solid #222;}
+
+    /* kleiner Pfeil, der zum Button „zeigt“ */
+    #panelArrow{
+      position:fixed;display:none;z-index:181;
+      top:calc(env(safe-area-inset-top,0px) + 54px);
+      left:calc(env(safe-area-inset-left,0px) + 36px);
+      width:0;height:0;
+      border-left:10px solid transparent;
+      border-right:10px solid transparent;
+      border-bottom:12px solid #222;
+    }
+
+    /* Typo + Zeilen der Farbreihen */
     #settingsPanel h3{margin:0 0 10px;font-size:20px;letter-spacing:.5px;}
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:18px;color:#eaeaea;margin:8px 0;}
-    .chip{width:50px;height:28px;border:4px solid #fff;border-radius:8px;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.25);cursor:pointer;position:relative;background:#000;}
+
+    /* Kleine Farbfelder („Chips“) für jede Kategorie */
+    .chip{
+      width:50px;height:28px;border:4px solid #fff;border-radius:8px;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.25);
+      cursor:pointer;position:relative;background:#000;
+    }
     .chip::after{content:"";position:absolute;inset:4px;border-radius:6px;background:var(--chip,#000);}
-    .btn{display:block;width:100%;margin-top:10px;padding:9px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
-      background:#2b2b2b;color:#e8e8e8;font-size:14px;text-align:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),
-      0 2px 10px rgba(0,0,0,.25);}
+
+    /* Allgemeine Panel-Buttons */
+    .btn{
+      display:block;width:100%;margin-top:10px;padding:9px 10px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.1);
+      background:#2b2b2b;color:#e8e8e8;font-size:14px;text-align:center;
+      box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),0 2px 10px rgba(0,0,0,.25);
+    }
     .btn:hover{background:#3a3a3a;}
 
-    /* kleineren Bildschirmen noch etwas kompakter */
+    /* Panel auf sehr niedrigen Displays etwas kompakter */
     @media (max-height:700px){
       #settingsPanel{width:clamp(230px,90vw,320px);padding:12px 10px 16px;max-height:calc(100dvh - 88px);}
       #settingsPanel h3{font-size:17px}
@@ -104,8 +242,11 @@
       .row{font-size:13px}
     }
 
-    /* --- Auto reset Block (kompakter) --- */
-    .reset-block{margin-top:10px;padding:9px;border-radius:14px;background:#1f1f1f;border:1px solid rgba(255,255,255,.06)}
+    /* Block für Auto-Reset (Timer zurück zur Uhrzeit) */
+    .reset-block{
+      margin-top:10px;padding:9px;border-radius:14px;
+      background:#1f1f1f;border:1px solid rgba(255,255,255,.06)
+    }
     .reset-row{display:flex;align-items:center;gap:10px;margin-top:6px}
     .reset-row label{font-size:13px;opacity:.9}
     .reset-row input[type="checkbox"]{transform:scale(1.05)}
@@ -114,34 +255,58 @@
       padding:6px 8px;font-size:13px;
     }
 
-    /* ===== Custom RGB Picker (Zahl-Felder etwas kleiner) ===== */
+    /* =========================
+       EIGENER RGB-COLOR-PICKER
+       (nur Layout/Style)
+       ========================= */
+
+    /* Overlay hinter dem Picker */
     #pickerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:300;}
+
+    /* Picker-Container (das Fenster) */
     #picker{
-      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);
-      background:#2a2a2a;border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.6);
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:min(92vw,380px);
+      background:#2a2a2a;border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.6);
       padding:14px;display:none;z-index:301;color:#fff;
     }
     #picker h4{margin:0 0 10px;font-size:16px}
+
+    /* SV-Fläche (Sättigung/Value), darüber liegt der Cursor */
     .sv-wrap{position:relative;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.15);}
     #sv{width:100%;height:180px;display:block;background:#f00;cursor:crosshair}
     .sv-cursor{position:absolute;width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.3);pointer-events:none}
+
+    /* Hue-Regler (Farbwinkel) */
     .h-wrap{position:relative;margin:10px 0}
-    #h{width:100%;height:14px;border-radius:10px;appearance:none;background:linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);outline:none;border:1px solid rgba(255,255,255,.15)}
+    #h{
+      width:100%;height:14px;border-radius:10px;appearance:none;
+      background:linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
+      outline:none;border:1px solid rgba(255,255,255,.15)
+    }
     #h::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #000}
+
+    /* RGB-Eingabefelder: kompakt */
     .rgb-row{display:flex;gap:8px;margin-top:10px}
     .rgb-row .cell{flex:1}
     .rgb-row label{display:block;font-size:12px;opacity:.85;margin-bottom:4px}
     .rgb-row input{
       width:100%;max-width:90px;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;
-      padding:4px 6px;font-size:12px;line-height:1.2; /* ► kleiner */
+      padding:4px 6px;font-size:12px;line-height:1.2;
     }
+
+    /* Vorschau der aktuell gewählten Farbe */
     #preview{height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);margin:10px 0;background:#000}
+
+    /* Buttons im Picker */
     .picker-actions{display:flex;gap:10px;margin-top:8px}
     .picker-actions button{flex:1;border:none;border-radius:12px;padding:10px 12px;background:#3a3a3a;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
     .picker-actions button.primary{background:#4b7bec}
   </style>
 </head>
 <body>
+  <!-- 3D-Würfel mit sechs Flächen (Zeit/Datum) -->
   <div class="scene">
     <div class="cube" id="cube">
       <div class="face front"  id="year">00</div>
@@ -153,19 +318,23 @@
     </div>
   </div>
 
+  <!-- Spacebar-Button (kann per Klick oder Leertaste toggeln) -->
   <button id="toggleButton" onclick="toggleCube()">
     <img src="spacebar_icon.png" alt="spacebar" />
   </button>
 
-  <!-- Settings -->
+  <!-- Zahnrad + Panel + Overlay -->
   <button id="settingsButton" type="button" aria-label="Settings">
     <img src="settings.png" alt="Settings" />
   </button>
   <div id="panelArrow"></div>
   <div id="settingsOverlay"></div>
 
+  <!-- Einstellungs-Panel (Farben + Auto-Reset) -->
   <div id="settingsPanel" role="dialog" aria-label="Settings">
     <h3>Change colors</h3>
+
+    <!-- Jede Zeile: Bezeichnung links, Farbfeld („chip“) rechts -->
     <div class="row">Hour:       <div class="chip" id="chipHours"   data-key="hours"></div></div>
     <div class="row">Minute:     <div class="chip" id="chipMinutes" data-key="minutes"></div></div>
     <div class="row">Second:     <div class="chip" id="chipSeconds" data-key="seconds"></div></div>
@@ -175,6 +344,7 @@
     <div class="row">Cube: <div class="chip" id="chipCube"    data-key="cube"></div></div>
     <div class="row">Background: <div class="chip" id="chipBackground" data-key="background"></div></div>
 
+    <!-- Abschnitt: Auto-Reset (zurück zur Uhr nach x Sekunden) -->
     <div class="reset-block">
       <strong>Auto reset</strong>
       <div class="reset-row">
@@ -187,12 +357,13 @@
       </div>
     </div>
 
+    <!-- Panel-Buttons -->
     <button class="btn" type="button" id="btnDefaults">Reset to defaults</button>
     <button class="btn" type="button" onclick="toggleCube()">Time/Date (space)</button>
     <button class="btn" type="button" id="closeSettingsBtn">Close</button>
   </div>
 
-  <!-- RGB Picker Modal -->
+  <!-- Eigenes RGB-Picker-Modal (kein Browser-<input type="color>) -->
   <div id="pickerOverlay"></div>
   <div id="picker">
     <h4>Select color</h4>
@@ -216,13 +387,26 @@
   </div>
 
   <script>
-    /* ===== Würfel & Interaktion ===== */
-    let showingDate=false, rotateX=-30, rotateY=45, isDragging=false, lastX,lastY, userRotated=false, inactivityTimer, toggleCount=0;
+    /* ============================================================
+       LOGIK: Zeit-Update, Interaktion (Maus/Touch), Auto-Reset
+       ============================================================ */
+
+    // State für Würfel/Interaktion
+    let showingDate=false,   // ob Datumssicht aktiv ist
+        rotateX=-30, rotateY=45,  // aktueller Rotationswinkel
+        isDragging=false,     // Maus wird gehalten
+        lastX,lastY,          // letzte Maus-/Touch-Position
+        userRotated=false,    // ob Nutzer manuell gedreht hat
+        inactivityTimer,      // Timer für Auto-Reset
+        toggleCount=0;        // nach 2x Klick Spacebar-Button ausblenden
+
     const cube=document.getElementById("cube");
     const toggleButton=document.getElementById("toggleButton");
 
+    // Uhrzeit + Datum jede Sekunde aktualisieren
     function updateTime(){
-      const now=new Date(); const monthNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const now=new Date();
+      const monthNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       hours.textContent  = String(now.getHours()).padStart(2,'0');
       minutes.textContent= String(now.getMinutes()).padStart(2,'0');
       seconds.textContent= String(now.getSeconds()).padStart(2,'0');
@@ -230,114 +414,284 @@
       month.textContent  = monthNames[now.getMonth()];
       day.textContent    = String(now.getDate()).padStart(2,'0');
     }
-    function toggleCube(){toggleCount++;if(toggleCount>=2)toggleButton.style.display="none";
-      showingDate=!showingDate;rotateX=showingDate?-215:-30;rotateY=45;
-      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}
-    function resetToClockView(){if(showingDate||userRotated){showingDate=false;userRotated=false;rotateX=-30;rotateY=45;
-      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}}
+
+    // Zeit/Datum umschalten (Drehung „schnappt“ auf festen Winkel)
+    function toggleCube(){
+      toggleCount++;
+      if(toggleCount>=2) toggleButton.style.display="none";
+      showingDate=!showingDate;
+      rotateX=showingDate?-215:-30;
+      rotateY=45;
+      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    }
+
+    // Zur Uhr-Ansicht zurückspringen (z.B. nach Inaktivität)
+    function resetToClockView(){
+      if(showingDate||userRotated){
+        showingDate=false;
+        userRotated=false;
+        rotateX=-30; rotateY=45;
+        cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      }
+    }
+
+    // Auto-Reset-Timer neu starten (bricht ab, wenn deaktiviert)
     function startInactivityTimer(){
       clearTimeout(inactivityTimer);
-      if(!autoResetEnabled) return;
+      if(!autoResetEnabled) return;                 // Schalter respektieren
       inactivityTimer=setTimeout(resetToClockView, autoResetSeconds*1000);
     }
-    cube.addEventListener("mousedown",e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;});
-    document.addEventListener("mouseup",()=>{isDragging=false;});
-    document.addEventListener("mousemove",e=>{if(!isDragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;
-      lastX=e.clientX;lastY=e.clientY;rotateY+=dx*0.5;rotateX-=dy*0.5;
-      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;userRotated=true;startInactivityTimer();});
-    document.body.addEventListener("touchstart",e=>{const t=e.touches[0];lastX=t.clientX;lastY=t.clientY;});
-    document.body.addEventListener("touchmove",e=>{e.preventDefault();const t=e.touches[0];
-      const dx=t.clientX-lastX,dy=t.clientY-lastY;lastX=t.clientX;lastY=t.clientY;
-      rotateY+=dx*1;rotateX-=dy*1;cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      userRotated=true;startInactivityTimer();},{passive:false});
-    window.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.matches('button, input, textarea')){e.preventDefault();toggleCube();}});
-    setInterval(updateTime,1000);updateTime();
 
-    /* ===== Settings öffnen/schließen ===== */
+    // Maussteuerung (Drag = Würfel drehen)
+    cube.addEventListener("mousedown",e=>{
+      isDragging=true; lastX=e.clientX; lastY=e.clientY;
+    });
+    document.addEventListener("mouseup",()=>{ isDragging=false; });
+    document.addEventListener("mousemove",e=>{
+      if(!isDragging) return;
+      const dx=e.clientX-lastX, dy=e.clientY-lastY;
+      lastX=e.clientX; lastY=e.clientY;
+      rotateY+=dx*0.5;  // horizontal
+      rotateX-=dy*0.5;  // vertikal (invertiert ist intuitiver)
+      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      userRotated=true; startInactivityTimer();
+    });
+
+    // Touchsteuerung (ein Finger = wie Maus)
+    document.body.addEventListener("touchstart",e=>{
+      const t=e.touches[0]; lastX=t.clientX; lastY=t.clientY;
+    });
+    document.body.addEventListener("touchmove",e=>{
+      e.preventDefault();
+      const t=e.touches[0];
+      const dx=t.clientX-lastX, dy=t.clientY-lastY;
+      lastX=t.clientX; lastY=t.clientY;
+      rotateY+=dx*1; rotateX-=dy*1; // auf Mobile etwas „kräftiger“
+      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      userRotated=true; startInactivityTimer();
+    },{passive:false});
+
+    // Tastatur: Leertaste toggelt ebenfalls
+    window.addEventListener('keydown',e=>{
+      if(e.code==='Space'&&!e.target.matches('button, input, textarea')){
+        e.preventDefault(); toggleCube();
+      }
+    });
+
+    // Ticker starten
+    setInterval(updateTime,1000);
+    updateTime();
+
+    /* ======================================
+       SETTINGS: Öffnen/Schließen/Defaults
+       ====================================== */
     const settingsBtn=document.getElementById('settingsButton');
     const settingsPanel=document.getElementById('settingsPanel');
     const settingsOverlay=document.getElementById('settingsOverlay');
     const panelArrow=document.getElementById('panelArrow');
     const closeSettingsBtn=document.getElementById('closeSettingsBtn');
     const btnDefaults=document.getElementById('btnDefaults');
-    function openSettings(){settingsOverlay.style.display='block';settingsPanel.style.display='block';panelArrow.style.display='block';}
-    function closeSettings(){settingsOverlay.style.display='none';settingsPanel.style.display='none';panelArrow.style.display='none';}
-    settingsBtn.addEventListener('click',()=> (settingsPanel.style.display==='block'?closeSettings():openSettings()));
-    settingsOverlay.addEventListener('click',closeSettings);closeSettingsBtn.addEventListener('click',closeSettings);
 
-    /* ===== Farben (inkl. „Settings-Button = Background“) ===== */
-    const mapping={hours:"chipHours",minutes:"chipMinutes",seconds:"chipSeconds",year:"chipYear",month:"chipMonth",day:"chipDay",cube:"chipCube",background:"chipBackground"};
-    const defaults={hours:"#e71f1b",minutes:"#ff8c42",seconds:"#fff275",year:"#4B0082",month:"#2f4fba",day:"#87c8fa",cube:"#111111",background:"#000000"};
-    function setChipColor(key,val){document.getElementById(mapping[key]).style.setProperty('--chip',val);}
+    // Panel sichtbar/unsichtbar schalten
+    function openSettings(){
+      settingsOverlay.style.display='block';
+      settingsPanel.style.display='block';
+      panelArrow.style.display='block';
+    }
+    function closeSettings(){
+      settingsOverlay.style.display='none';
+      settingsPanel.style.display='none';
+      panelArrow.style.display='none';
+    }
+    settingsBtn.addEventListener('click',()=> (
+      settingsPanel.style.display==='block' ? closeSettings() : openSettings()
+    ));
+    settingsOverlay.addEventListener('click',closeSettings);
+    closeSettingsBtn.addEventListener('click',closeSettings);
+
+    /* ======================================
+       FARB-VERWALTUNG (mit LocalStorage)
+       - Jeder „chip“ öffnet den Picker
+       - „cube“ färbt Flächenhintergrund
+       - „background“ färbt Body & Zahnrad
+       ====================================== */
+    const mapping={
+      hours:"chipHours",
+      minutes:"chipMinutes",
+      seconds:"chipSeconds",
+      year:"chipYear",
+      month:"chipMonth",
+      day:"chipDay",
+      cube:"chipCube",
+      background:"chipBackground"
+    };
+
+    // Standardfarben, die wir beim ersten Start setzen
+    const defaults={
+      hours:"#e71f1b",
+      minutes:"#ff8c42",
+      seconds:"#fff275",
+      year:"#4B0082",
+      month:"#2f4fba",
+      day:"#87c8fa",
+      cube:"#111111",
+      background:"#000000"
+    };
+
+    // Farbfeld visuell aktualisieren
+    function setChipColor(key,val){
+      document.getElementById(mapping[key]).style.setProperty('--chip',val);
+    }
+
+    // Farbe auf das jeweilige Ziel anwenden + speichern
     function applyColor(key,val){
-      if(key==='cube'){document.querySelectorAll('.face').forEach(f=>f.style.background=val);}
-      else if(key==='background'){
+      if(key==='cube'){
+        // alle Flächen bekommen denselben Verlauf / Hintergrund
+        document.querySelectorAll('.face').forEach(f=>f.style.background=val);
+      } else if(key==='background'){
+        // Körperhintergrund und auch der Zahnrad-Button passen sich an
         document.body.style.background=val;
-        settingsBtn.style.background = val;                /* Button nimmt BG an */
-        settingsBtn.style.borderColor = 'rgba(255,255,255,.35)'; /* sichtbarer Rahmen bleibt */
-      }else{
+        settingsBtn.style.background = val;
+        settingsBtn.style.borderColor = 'rgba(255,255,255,.35)'; // Rahmen bleibt sichtbar
+      } else {
+        // normale Textfarbe (Stunden/Minuten etc.)
         document.getElementById(key).style.color=val;
       }
-      localStorage.setItem('color-'+key,val);setChipColor(key,val);
+      localStorage.setItem('color-'+key,val);
+      setChipColor(key,val);
     }
-    function applySavedColors(){Object.keys(mapping).forEach(k=>applyColor(k, localStorage.getItem('color-'+k)||defaults[k]));}
-    function resetToDefaultColors(){Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k));applySavedColors();}
+
+    // Beim Laden: gespeicherte Farben anwenden (sonst Defaults)
+    function applySavedColors(){
+      Object.keys(mapping).forEach(k=>{
+        applyColor(k, localStorage.getItem('color-'+k) || defaults[k]);
+      });
+    }
+
+    // Auf Standardfarben zurücksetzen (und dann anwenden)
+    function resetToDefaultColors(){
+      Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k));
+      applySavedColors();
+    }
     btnDefaults.addEventListener('click',resetToDefaultColors);
 
-    /* ====== RGB Picker ====== */
+    /* ======================================================
+       EIGENER RGB-PICKER: HSV<->RGB, Canvas-Zeichnen etc.
+       ====================================================== */
     const pickerOverlay=document.getElementById('pickerOverlay');
     const picker=document.getElementById('picker');
-    const sv=document.getElementById('sv'); const svc=document.getElementById('svc');
-    const h=document.getElementById('h'); const preview=document.getElementById('preview');
+    const sv=document.getElementById('sv');     // Sättigung/Value-Fläche (Canvas)
+    const svc=document.getElementById('svc');   // Cursor auf der SV-Fläche
+    const h=document.getElementById('h');       // Hue-Slider
+    const preview=document.getElementById('preview'); // Farbvorschau
     const Rin=document.getElementById('r'), Gin=document.getElementById('g'), Bin=document.getElementById('b');
-    let currentKey=null, hue=0, sat=1, val=1; // HSV
+    let currentKey=null, hue=0, sat=1, val=1; // HSV-Werte
 
+    // Labels für den Titel im Picker
     const labels={hours:"Hour",minutes:"Minute",seconds:"Second",year:"Year",month:"Month",day:"Day",cube:"Cube faces",background:"Background"};
 
-    function hsv2rgb(h,s,v){let f=(n,k=(n+h/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return [f(5),f(3),f(1)].map(x=>Math.round(x*255));}
-    function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,v=max;const d=max-min;s=max===0?0:d/max;
-      if(max===min){h=0}else{switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}h*=60}
-      return [h,s,v]}
+    // Hilfsfunktionen: Umrechnungen
+    function hsv2rgb(h,s,v){
+      let f=(n,k=(n+h/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);
+      return [f(5),f(3),f(1)].map(x=>Math.round(x*255));
+    }
+    function rgb2hsv(r,g,b){
+      r/=255; g/=255; b/=255;
+      const max=Math.max(r,g,b), min=Math.min(r,g,b);
+      let h,s,v=max, d=max-min; s=max===0?0:d/max;
+      if(max===min){h=0}
+      else{
+        switch(max){
+          case r: h=(g-b)/d+(g<b?6:0); break;
+          case g: h=(b-r)/d+2; break;
+          case b: h=(r-g)/d+4; break;
+        }
+        h*=60;
+      }
+      return [h,s,v]
+    }
     const toHex=n=>('#'+[n[0],n[1],n[2]].map(x=>x.toString(16).padStart(2,'0')).join(''));
 
+    // SV-Fläche neu zeichnen (wenn Hue geändert wurde)
     function drawSV(){
       const ctx=sv.getContext('2d'), w=sv.width, hgt=sv.height;
       const [r,g,b]=hsv2rgb(hue,1,1);
+
+      // Grundfarbe (Hue)
       ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.fillRect(0,0,w,hgt);
-      const grdW=ctx.createLinearGradient(0,0,w,0); grdW.addColorStop(0,'#fff'); grdW.addColorStop(1,'transparent'); ctx.fillStyle=grdW; ctx.fillRect(0,0,w,hgt);
-      const grdB=ctx.createLinearGradient(0,0,0,hgt); grdB.addColorStop(0,'transparent'); grdB.addColorStop(1,'#000'); ctx.fillStyle=grdB; ctx.fillRect(0,0,w,hgt);
+
+      // Weißverlauf (links -> rechts) für Sättigung
+      const grdW=ctx.createLinearGradient(0,0,w,0);
+      grdW.addColorStop(0,'#fff'); grdW.addColorStop(1,'transparent');
+      ctx.fillStyle=grdW; ctx.fillRect(0,0,w,hgt);
+
+      // Schwarzverlauf (oben -> unten) für Value
+      const grdB=ctx.createLinearGradient(0,0,0,hgt);
+      grdB.addColorStop(0,'transparent'); grdB.addColorStop(1,'#000');
+      ctx.fillStyle=grdB; ctx.fillRect(0,0,w,hgt);
+
+      // Cursor entsprechend aktueller S/V positionieren
       svc.style.left = (sat * w - svc.offsetWidth/2)+'px';
       svc.style.top  = ((1-val) * hgt - svc.offsetHeight/2)+'px';
     }
-    function setFromHSV(hh,ss,vv){hue=hh; sat=Math.min(1,Math.max(0,ss)); val=Math.min(1,Math.max(0,vv));
+
+    // Aus HSV alle Darstellungen setzen
+    function setFromHSV(hh,ss,vv){
+      hue=hh; sat=Math.min(1,Math.max(0,ss)); val=Math.min(1,Math.max(0,vv));
       const [r,g,b]=hsv2rgb(hue,sat,val);
       preview.style.background=`rgb(${r},${g},${b})`;
-      Rin.value=r; Gin.value=g; Bin.value=b; drawSV();
-    }
-    function setFromRGB(r,g,b){
-      r=Math.min(255,Math.max(0,+r|0)); g=Math.min(255,Math.max(0,+g|0)); b=Math.min(255,Math.max(0,+b|0));
-      const hsv=rgb2hsv(r,g,b); hue=hsv[0]; sat=hsv[1]; val=hsv[2];
-      h.value=Math.round(hue); preview.style.background=`rgb(${r},${g},${b})`;
-      Rin.value=r; Gin.value=g; Bin.value=b; drawSV();
+      Rin.value=r; Gin.value=g; Bin.value=b;
+      drawSV();
     }
 
+    // Aus RGB HSV berechnen und alles synchronisieren
+    function setFromRGB(r,g,b){
+      r=Math.min(255,Math.max(0,+r|0));
+      g=Math.min(255,Math.max(0,+g|0));
+      b=Math.min(255,Math.max(0,+b|0));
+      const hsv=rgb2hsv(r,g,b); hue=hsv[0]; sat=hsv[1]; val=hsv[2];
+      h.value=Math.round(hue);
+      preview.style.background=`rgb(${r},${g},${b})`;
+      Rin.value=r; Gin.value=g; Bin.value=b;
+      drawSV();
+    }
+
+    // Picker öffnen: initiale Farbe aus LocalStorage (oder Default)
     function openPicker(key){
       currentKey=key;
       picker.querySelector('h4').textContent = `${labels[key] || 'Select'} – Select color`;
       const col = localStorage.getItem('color-'+key) || defaults[key];
-      const r=parseInt(col.slice(1,3),16), g=parseInt(col.slice(3,5),16), b=parseInt(col.slice(5,7),16);
+      const r=parseInt(col.slice(1,3),16),
+            g=parseInt(col.slice(3,5),16),
+            b=parseInt(col.slice(5,7),16);
       setFromRGB(r,g,b);
       pickerOverlay.style.display='block'; picker.style.display='block';
-      const rect=picker.getBoundingClientRect(); sv.width = Math.floor(rect.width-28); sv.height=180; drawSV();
+
+      // Canvas-Größe an die Dialogbreite anpassen
+      const rect=picker.getBoundingClientRect();
+      sv.width = Math.floor(rect.width-28);
+      sv.height=180;
+      drawSV();
     }
-    function closePicker(){pickerOverlay.style.display='none'; picker.style.display='none'; currentKey=null;}
+    function closePicker(){
+      pickerOverlay.style.display='none';
+      picker.style.display='none';
+      currentKey=null;
+    }
+
+    // Overlay-Klick = schließen
     pickerOverlay.addEventListener('click',closePicker);
+    // Buttons im Picker
     document.getElementById('cancelPick').addEventListener('click',closePicker);
+
+    // Hue-Schieberegler -> SV neu zeichnen
     h.addEventListener('input',()=> setFromHSV(+h.value, sat, val));
+    // RGB-Eingaben -> alles synchronisieren
     Rin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
     Gin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
     Bin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
 
+    // SV-Interaktion (Maus + Touch)
     function handleSV(clientX,clientY){
       const r=sv.getBoundingClientRect();
       const x=Math.min(Math.max(clientX-r.left,0),r.width);
@@ -353,36 +707,46 @@
     sv.addEventListener('touchmove',e=>{if(svDrag){e.preventDefault();handleSV(e.touches[0].clientX,e.touches[0].clientY)}},{passive:false});
     sv.addEventListener('touchend',()=>svDrag=false);
 
+    // „Apply“ übernimmt Farbe (HEX gespeichert) und schließt den Picker
     document.getElementById('applyPick').addEventListener('click',()=>{
       const hex = toHex([Rin.value|0, Gin.value|0, Bin.value|0]);
       applyColor(currentKey, hex);
       closePicker();
     });
+
+    // Alle Chips klickbar machen -> Picker öffnen
     Object.keys(mapping).forEach(k=>{
       document.getElementById(mapping[k]).addEventListener('click',()=>openPicker(k));
     });
 
-    /* ===== Auto‑Reset Zustand laden/speichern (Standard 10s beim ersten Start) ===== */
+    /* =========================================================
+       AUTO-RESET: Zustand laden/speichern (Default 10 Sekunden)
+       ========================================================= */
     const autoResetEnableEl = document.getElementById('autoResetEnable');
     const autoResetSecondsEl = document.getElementById('autoResetSeconds');
 
-    // Standardwerte (10s, aktiviert), falls nichts gespeichert ist
-    let autoResetEnabled = localStorage.getItem('autoResetEnabled') === 'false' ? false : true;
+    // Defaults, wenn noch nichts gespeichert wurde
+    let autoResetEnabled = localStorage.getItem('autoResetEnabled') === 'false' ? false : true; // standardmäßig an
     let autoResetSeconds = localStorage.getItem('autoResetSeconds')
       ? parseInt(localStorage.getItem('autoResetSeconds'), 10)
-      : 10;
+      : 10; // standardmäßig 10 s
 
+    // UI mit State synchronisieren
     function syncResetUI(){
       autoResetEnableEl.checked = autoResetEnabled;
       autoResetSecondsEl.value = autoResetSeconds;
       autoResetSecondsEl.disabled = !autoResetEnabled;
     }
+
+    // Schalter geändert -> speichern + Timer neu setzen
     autoResetEnableEl.addEventListener('change',()=>{
       autoResetEnabled = autoResetEnableEl.checked;
       localStorage.setItem('autoResetEnabled', String(autoResetEnabled));
       autoResetSecondsEl.disabled = !autoResetEnabled;
       startInactivityTimer();
     });
+
+    // Sekunden geändert -> clampen + speichern + Timer neu setzen
     autoResetSecondsEl.addEventListener('input',()=>{
       const v = Math.max(1, Math.min(3600, parseInt(autoResetSecondsEl.value||'10',10)));
       autoResetSeconds = v;
@@ -390,12 +754,11 @@
       startInactivityTimer();
     });
 
+    // Beim allerersten Besuch: Farben zurücksetzen + Auto-Reset sicher auf 10 s aktivieren
     window.addEventListener('load',()=>{
       if(!localStorage.getItem('visitedBefore')){
         localStorage.setItem('visitedBefore','true');
-        // Farben zurücksetzen
-        Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k));
-        // ► Beim allerersten Start Auto‑Reset sicher auf 10s & enabled setzen
+        Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k)); // Farben zu Defaults
         localStorage.setItem('autoResetEnabled','true');
         localStorage.setItem('autoResetSeconds','10');
         autoResetEnabled = true;
@@ -406,4 +769,4 @@
     });
   </script>
 </body>
-</html>
+  </html>
