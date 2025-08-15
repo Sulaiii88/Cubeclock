@@ -1,112 +1,342 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>CubeClock</title>
+  <title>Zeitwürfel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet" />
+
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
   </script>
+
   <style>
-    /* ===== dein bestehender Würfel (unverändert) ===== */
-    body{margin:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;
-      height:100vh;font-family:'Space Mono',monospace;overflow:hidden;touch-action:none;}
-    .scene{width:63vmin;height:63vmin;perspective:1100px;margin-bottom:90px;}
-    .cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 1s ease;
-      transform:rotateX(-30deg) rotateY(45deg);}
-    .face{position:absolute;width:100%;height:100%;background:linear-gradient(to bottom right,#000,#111);color:#fff;
-      font-size:calc(63vmin / 1.5);letter-spacing:-5px;display:flex;justify-content:center;align-items:center;
-      border:1px solid #555;backface-visibility:hidden;}
-    .scene,.cube,.face{user-select:none;outline:none;}
-    #hours{color:#e71f1b;} #minutes{color:#ff8c42;} #seconds{color:#fff275;}
-    #year{color:#4B0082;} #day{color:#87c8fa;}
-    #month{color:#2f4fba;font-size:calc(63vmin / 2);font-weight:bold;}
-    .front{transform:rotateY( 90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg);}
-    .back {transform:rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg);}
-    .right{transform:rotateY(  0deg) translateZ(31.5vmin);}
-    .left {transform:rotateY(-90deg) translateZ(31.5vmin);}
-    .top  {transform:rotateX( 90deg) translateZ(31.5vmin);}
-    .bottom{transform:rotateX(-90deg) translateZ(31.5vmin);}
-
-    #toggleButton{position:fixed;left:50%;transform:translateX(-50%);bottom:5vh;padding:1px 100px;border:none;outline:none;
-      box-shadow:none;border-radius:10px;background:#444;cursor:pointer;z-index:10;}
-    #toggleButton:hover{background:#666;}
-    #toggleButton img{width:30px;height:auto;display:block;}
-
-    @media (min-width:601px){
-      .scene{width:50vmin;height:50vmin;}
-      .face{font-size:calc(50vmin / 1.5);}
-      #month{font-size:calc(50vmin / 2);}
-      .front{transform:rotateY( 90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg);}
-      .back {transform:rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg);}
-      .right{transform:rotateY(  0deg) translateZ(25vmin);}
-      .left {transform:rotateY(-90deg) translateZ(25vmin);}
-      .top  {transform:rotateX( 90deg) translateZ(25vmin);}
-      .bottom{transform:rotateX(-90deg) translateZ(25vmin);}
-    }
-    @media (display-mode:standalone) and (max-width:600px){
-      .scene{transform:scale(3);transform-origin:center;}
+    :root{
+      /* Default-UI-Farben – werden per Settings überschrieben */
+      --c-hours:   #e71f1b;
+      --c-mins:    #ff8c42;
+      --c-secs:    #fff275;
+      --c-year:    #4B0082;
+      --c-month:   #2f4fba;
+      --c-day:     #87c8fa;
+      --c-cubeedge:#555555;
+      --c-bg:      #000000;
     }
 
-    /* ===== Settings UI (wie zuvor) ===== */
-    #settingsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:150;}
-    #settingsButton{
-      position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);
-      left:calc(env(safe-area-inset-left,0px) + 12px);width:44px;height:44px;padding:8px;background:#222;
-      border:1px solid rgba(255,255,255,.08);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer;z-index:200;
+    /* ---------- Basis (unverändert) ---------- */
+    body {
+      margin: 0;
+      background: var(--c-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none; /* wichtig für Touchsteuerung */
     }
-    #settingsButton img{width:28px;height:28px;display:block;}
-    #settingsPanel{
-      position:fixed;top:calc(env(safe-area-inset-top,0px) + 62px);left:calc(env(safe-area-inset-left,0px) + 12px);
-      display:none;z-index:180;width:clamp(240px,88vw,340px);max-height:calc(100vh - 90px);overflow:auto;
-      background:#222;border:1px solid rgba(255,255,255,.10);border-radius:18px;color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.5);
-      padding:16px 14px 12px;
-    }
-    #panelArrow{position:fixed;display:none;z-index:181;top:calc(env(safe-area-inset-top,0px) + 54px);
-      left:calc(env(safe-area-inset-left,0px) + 36px);width:0;height:0;border-left:10px solid transparent;
-      border-right:10px solid transparent;border-bottom:12px solid #222;}
-    #settingsPanel h3{margin:0 0 12px;font-size:18px;letter-spacing:.5px;}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px;color:#eaeaea;margin:9px 0;}
 
-    .chip{width:52px;height:30px;border:4px solid #fff;border-radius:8px;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.25);cursor:pointer;position:relative;background:#000;}
-    .chip::after{content:"";position:absolute;inset:4px;border-radius:6px;background:var(--chip,#000);}
-    .btn{display:block;width:100%;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
-      background:#2b2b2b;color:#e8e8e8;font-size:15px;text-align:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.05),
-      0 2px 10px rgba(0,0,0,.25);}
-    .btn:hover{background:#3a3a3a;}
-    @media (max-width:360px){#settingsPanel{width:clamp(220px,92vw,300px)} .row{font-size:15px} .chip{width:48px;height:28px} .btn{font-size:14px}}
-
-    /* ===== Custom RGB Color Picker ===== */
-    #pickerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:300;}
-    #picker{
-      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);
-      background:#2a2a2a;border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.6);
-      padding:14px;display:none;z-index:301;color:#fff;
+    .scene {
+      width: 63vmin;
+      height: 63vmin;
+      perspective: 1100px;
+      margin-bottom: 90px;
     }
-    #picker h4{margin:0 0 10px;font-size:16px}
-    .sv-wrap{position:relative;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.15);}
-    #sv{width:100%;height:180px;display:block;background:#f00;cursor:crosshair}
-    .sv-cursor{position:absolute;width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.3);pointer-events:none}
-    .h-wrap{position:relative;margin:10px 0}
-    #h{width:100%;height:14px;border-radius:10px;appearance:none;background:linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);outline:none;border:1px solid rgba(255,255,255,.15)}
-    #h::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid #000}
-    .rgb-row{display:flex;gap:8px;margin-top:10px}
-    .rgb-row .cell{flex:1}
-    .rgb-row label{display:block;font-size:12px;opacity:.85;margin-bottom:4px}
-    .rgb-row input{width:100%;background:#1e1e1e;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;padding:8px 10px;font-family:inherit}
-    #preview{height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);margin:10px 0;background:#000}
-    .picker-actions{display:flex;gap:10px;margin-top:8px}
-    .picker-actions button{flex:1;border:none;border-radius:12px;padding:10px 12px;background:#3a3a3a;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
-    .picker-actions button.primary{background:#4b7bec}
+
+    .cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1s ease;
+      transform: rotateX(-30deg) rotateY(45deg);
+    }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom right, #000, #111);
+      color: #fff;
+      font-size: calc(63vmin / 1.5);
+      letter-spacing: -5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid var(--c-cubeedge);
+      backface-visibility: hidden;
+    }
+
+    .scene, .cube, .face {
+      user-select: none;
+      outline: none;
+    }
+
+    #hours   { color: var(--c-hours); }
+    #minutes { color: var(--c-mins);  }
+    #seconds { color: var(--c-secs);  }
+    #year    { color: var(--c-year);  }
+    #day     { color: var(--c-day);   }
+    #month   {
+      color: var(--c-month);
+      font-size: calc(63vmin / 2);
+      font-weight: bold;
+    }
+
+    .front  { transform: rotateY( 90deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .back   { transform: rotateY(180deg) translateZ(31.5vmin) rotateY(180deg) rotateX(180deg); }
+    .right  { transform: rotateY(0deg) translateZ(31.5vmin); }
+    .left   { transform: rotateY(-90deg) translateZ(31.5vmin); }
+    .top    { transform: rotateX(90deg) translateZ(31.5vmin); }
+    .bottom { transform: rotateX(-90deg) translateZ(31.5vmin); }
+
+    button#toggleButton {
+      position: absolute;
+      bottom: 5vh;
+      padding: 1px 100px;
+      border: none;
+      outline: none;
+      box-shadow: none;
+      border-radius: 10px;
+      background-color: #444;
+      cursor: pointer;
+    }
+    button#toggleButton:hover { background-color: #666; }
+    button#toggleButton img { width: 30px; height: auto; display: block; }
+
+    /* Laptop/Desktop – kleiner (unverändert) */
+    @media (min-width: 601px) {
+      .scene { width: 50vmin; height: 50vmin; }
+      .face { font-size: calc(50vmin / 1.5); }
+      #month { font-size: calc(50vmin / 2); }
+      .front  { transform: rotateY( 90deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .back   { transform: rotateY(180deg) translateZ(25vmin) rotateY(180deg) rotateX(180deg); }
+      .right  { transform: rotateY(0deg) translateZ(25vmin); }
+      .left   { transform: rotateY(-90deg) translateZ(25vmin); }
+      .top    { transform: rotateX(90deg) translateZ(25vmin); }
+      .bottom { transform: rotateX(-90deg) translateZ(25vmin); }
+    }
+
+    /* PWA Handy skaliert (unverändert) */
+    @media (display-mode: standalone) and (max-width: 600px) {
+      .scene { transform: scale(3); transform-origin: center; }
+    }
+
+    /* ---------- Settings UI (Zahnrad + Panel) ---------- */
+    .gear {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      z-index: 50;
+      backdrop-filter: blur(6px);
+    }
+    .gear img { width: 24px; height: 24px; filter: invert(100%); }
+
+    .settings {
+      position: fixed;
+      top: 84px;       /* damit genau unter dem Zahnrad */
+      left: 16px;
+      width: min(92vw, 560px);
+      max-height: calc(100vh - 120px);
+      overflow: auto;
+      background: rgba(30,30,31,0.92);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      padding: 22px 18px 18px;
+      color: #e7e7e7;
+      z-index: 60;
+      backdrop-filter: blur(8px);
+      display: none;
+    }
+    .settings.show { display: block; }
+
+    .settings h2{
+      margin: 4px 6px 16px;
+      font-weight: 800;
+      font-size: 28px;
+      letter-spacing: 0.06em;
+    }
+
+    .row{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 14px; padding: 10px 6px;
+    }
+    .row label{ font-size: 20px; letter-spacing: 0.06em; }
+    .swatch{
+      width: 84px; height: 40px; border-radius: 10px;
+      border: 4px solid rgba(255,255,255,0.65);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.9);
+      cursor: pointer;
+    }
+
+    .btn {
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px 16px;
+      font-size: 18px;
+      color: #e5e5e6;
+      background: #3b3b3d;
+      border: 1px solid #5a5a5c;
+      border-radius: 14px;
+    }
+
+    /* ---------- Farbwähler (RGB) ---------- */
+    .picker{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 80;
+    }
+    .picker.show{ display:flex; }
+
+    .picker-card{
+      width: min(680px, 92vw);
+      background: #262627;
+      color: #f2f2f2;
+      border: 1px solid #4a4a4a;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+    .picker-title{
+      font-size: 22px;
+      margin: 4px 4px 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .svbox{
+      position: relative; height: 240px; border-radius: 10px; overflow: hidden;
+      border: 1px solid #3f3f40; margin-bottom: 12px;
+    }
+    .sv-grad{
+      position:absolute; inset:0;
+      background: linear-gradient(90deg,#fff,rgba(255,255,255,0));
+    }
+    .sv-shade{
+      position:absolute; inset:0;
+      background: linear-gradient(0deg,#000,rgba(0,0,0,0));
+    }
+    .sv-cursor{
+      position:absolute; width:18px; height:18px; border-radius:50%;
+      border:2px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.7);
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    .hue-row{ display:flex; align-items:center; gap:10px; margin: 8px 0 10px; }
+    .hue{
+      flex:1; height:16px; border-radius:8px; border:1px solid #3f3f40; position:relative;
+      background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+    }
+    .hue-cursor{
+      position:absolute; top:50%; width:18px; height:18px; border-radius:50%;
+      border:2px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.7);
+      transform: translate(-50%,-50%);
+      left: 0%;
+    }
+    .preview{
+      width:100%; height:40px; border-radius:10px; border:1px solid #3f3f40;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6);
+      margin-bottom: 10px;
+    }
+
+    /* ⬇⬇ Kleiner gemachte RGB-Felder (nur diese Werte geändert) */
+    .rgb-row{ display:flex; gap:6px; margin-top:8px; }
+    .rgb-row label{ display:flex; flex-direction:column; gap:4px; font-size:10px; flex:1; }
+    .rgb-row input{
+      padding:8px 8px; font-size:16px; height:36px;
+      border-radius:10px; border:1px solid #4a4a4a; background:#1c1c1d; color:#f2f2f2;
+    }
+
+    .picker-actions{
+      margin-top: 12px;
+      display:flex; gap:10px; justify-content:space-between;
+    }
+    .picker-actions button{
+      flex:1; padding:9px 11px; font-size:15px;
+      border-radius:12px; border:1px solid #5a5a5c; color:#e6e6e7; background:#3c3c3e;
+    }
+    .picker-actions button.apply{ background:#4b6ee7; border-color:#6480ff; }
   </style>
 </head>
 <body>
+
+  <!-- Zahnrad -->
+  <button class="gear" id="gearBtn" aria-label="Open settings">
+    <img src="settings.png" alt="settings">
+  </button>
+
+  <!-- Settings Panel -->
+  <section class="settings" id="settings">
+    <h2>Change colors</h2>
+
+    <div class="row"><label>Hour:</label>   <div class="swatch" id="sw_hours"></div></div>
+    <div class="row"><label>Minute:</label> <div class="swatch" id="sw_minutes"></div></div>
+    <div class="row"><label>Second:</label> <div class="swatch" id="sw_seconds"></div></div>
+    <div class="row"><label>Year:</label>   <div class="swatch" id="sw_year"></div></div>
+    <div class="row"><label>Month:</label>  <div class="swatch" id="sw_month"></div></div>
+    <div class="row"><label>Day:</label>    <div class="swatch" id="sw_day"></div></div>
+    <div class="row"><label>Cube edge:</label> <div class="swatch" id="sw_edge"></div></div>
+    <div class="row"><label>Background:</label> <div class="swatch" id="sw_bg"></div></div>
+
+    <button class="btn" id="btnDefaults">Default colors</button>
+    <button class="btn" id="btnToggle">Time/Date (space)</button>
+    <button class="btn" id="btnClose">Close</button>
+  </section>
+
+  <!-- Farbwähler -->
+  <div class="picker" id="picker">
+    <div class="picker-card">
+      <div class="picker-title" id="pickTitle">Select color</div>
+      <div class="svbox" id="svBox">
+        <div class="sv-grad"></div>
+        <div class="sv-shade"></div>
+        <div class="sv-cursor" id="svCursor" style="left:100%; top:0%"></div>
+      </div>
+
+      <div class="hue-row">
+        <div class="hue" id="hue">
+          <div class="hue-cursor" id="hueCursor" style="left:0%"></div>
+        </div>
+      </div>
+
+      <div class="preview" id="preview"></div>
+
+      <div class="rgb-row">
+        <label>R<input type="number" id="rIn" min="0" max="255"></label>
+        <label>G<input type="number" id="gIn" min="0" max="255"></label>
+        <label>B<input type="number" id="bIn" min="0" max="255"></label>
+      </div>
+
+      <div class="picker-actions">
+        <button id="btnCancel">Cancel</button>
+        <button class="apply" id="btnApply">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Würfel -->
   <div class="scene">
     <div class="cube" id="cube">
       <div class="face front"  id="year">00</div>
@@ -119,211 +349,338 @@
   </div>
 
   <button id="toggleButton" onclick="toggleCube()">
-    <img src="spacebar_icon.png" alt="spacebar" />
+    <img src="spacebar_icon.png" alt="Leertaste" />
   </button>
-
-  <!-- Settings -->
-  <button id="settingsButton" type="button" aria-label="Settings">
-    <img src="settings.png" alt="Settings" />
-  </button>
-  <div id="panelArrow"></div>
-  <div id="settingsOverlay"></div>
-
-  <div id="settingsPanel" role="dialog" aria-label="Settings">
-    <h3>Change colors</h3>
-    <div class="row">Hour:       <div class="chip" id="chipHours"   data-key="hours"></div></div>
-    <div class="row">Minute:     <div class="chip" id="chipMinutes" data-key="minutes"></div></div>
-    <div class="row">Second:     <div class="chip" id="chipSeconds" data-key="seconds"></div></div>
-    <div class="row">Year:       <div class="chip" id="chipYear"    data-key="year"></div></div>
-    <div class="row">Month:      <div class="chip" id="chipMonth"   data-key="month"></div></div>
-    <div class="row">Day:        <div class="chip" id="chipDay"     data-key="day"></div></div>
-    <div class="row">Cube faces: <div class="chip" id="chipCube"    data-key="cube"></div></div>
-    <div class="row">Background: <div class="chip" id="chipBackground" data-key="background"></div></div>
-
-    <button class="btn" type="button" id="btnDefaults">Reset to defaults</button>
-    <button class="btn" type="button" onclick="toggleCube()">Time/Date (space)</button>
-    <button class="btn" type="button" id="closeSettingsBtn">Close</button>
-  </div>
-
-  <!-- RGB Picker Modal -->
-  <div id="pickerOverlay"></div>
-  <div id="picker">
-    <h4>Select color</h4>
-    <div class="sv-wrap">
-      <canvas id="sv"></canvas>
-      <div class="sv-cursor" id="svc"></div>
-    </div>
-    <div class="h-wrap">
-      <input id="h" type="range" min="0" max="360" value="0">
-    </div>
-    <div id="preview"></div>
-    <div class="rgb-row">
-      <div class="cell"><label for="r">R</label><input id="r" type="number" min="0" max="255"></div>
-      <div class="cell"><label for="g">G</label><input id="g" type="number" min="0" max="255"></div>
-      <div class="cell"><label for="b">B</label><input id="b" type="number" min="0" max="255"></div>
-    </div>
-    <div class="picker-actions">
-      <button id="cancelPick">Cancel</button>
-      <button id="applyPick" class="primary">Apply</button>
-    </div>
-  </div>
 
   <script>
-    /* ===== Würfel & Interaktion (wie gehabt) ===== */
-    let showingDate=false, rotateX=-30, rotateY=45, isDragging=false, lastX,lastY, userRotated=false, inactivityTimer, toggleCount=0;
-    const cube=document.getElementById("cube");
-    const toggleButton=document.getElementById("toggleButton");
+    /* =========================
+       KONFIG: Picker-Titelwort
+       ========================= */
+    const PICKER_TITLE = 'Select color'; // z.B. 'Pick color' / 'Farbe wählen'
 
-    function updateTime(){
-      const now=new Date(); const monthNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      hours.textContent  = String(now.getHours()).padStart(2,'0');
-      minutes.textContent= String(now.getMinutes()).padStart(2,'0');
-      seconds.textContent= String(now.getSeconds()).padStart(2,'0');
-      year.textContent   = String(now.getFullYear()%100).padStart(2,'0');
-      month.textContent  = monthNames[now.getMonth()];
-      day.textContent    = String(now.getDate()).padStart(2,'0');
-    }
-    function toggleCube(){toggleCount++;if(toggleCount>=2)toggleButton.style.display="none";
-      showingDate=!showingDate;rotateX=showingDate?-215:-30;rotateY=45;
-      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}
-    function resetToClockView(){if(showingDate||userRotated){showingDate=false;userRotated=false;rotateX=-30;rotateY=45;
-      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;}}
-    function startInactivityTimer(){clearTimeout(inactivityTimer);inactivityTimer=setTimeout(resetToClockView,10000);}
-    cube.addEventListener("mousedown",e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;});
-    document.addEventListener("mouseup",()=>{isDragging=false;});
-    document.addEventListener("mousemove",e=>{if(!isDragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;
-      lastX=e.clientX;lastY=e.clientY;rotateY+=dx*0.5;rotateX-=dy*0.5;
-      cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;userRotated=true;startInactivityTimer();});
-    document.body.addEventListener("touchstart",e=>{const t=e.touches[0];lastX=t.clientX;lastY=t.clientY;});
-    document.body.addEventListener("touchmove",e=>{e.preventDefault();const t=e.touches[0];
-      const dx=t.clientX-lastX,dy=t.clientY-lastY;lastX=t.clientX;lastY=t.clientY;
-      rotateY+=dx*1;rotateX-=dy*1;cube.style.transform=`rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      userRotated=true;startInactivityTimer();},{passive:false});
-    window.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.matches('button, input, textarea')){e.preventDefault();toggleCube();}});
-    setInterval(updateTime,1000);updateTime();
+    /* ======= Uhr & Würfel (unverändert) ======= */
+    let showingDate = false;
+    let rotateX = -30;
+    let rotateY = 45;
+    let isDragging = false;
+    let lastX, lastY;
+    let userRotated = false;
+    let inactivityTimer;
+    let toggleCount = 0;
 
-    /* ===== Settings öffnen/schließen ===== */
-    const settingsBtn=document.getElementById('settingsButton');
-    const settingsPanel=document.getElementById('settingsPanel');
-    const settingsOverlay=document.getElementById('settingsOverlay');
-    const panelArrow=document.getElementById('panelArrow');
-    const closeSettingsBtn=document.getElementById('closeSettingsBtn');
-    const btnDefaults=document.getElementById('btnDefaults');
-    function openSettings(){settingsOverlay.style.display='block';settingsPanel.style.display='block';panelArrow.style.display='block';}
-    function closeSettings(){settingsOverlay.style.display='none';settingsPanel.style.display='none';panelArrow.style.display='none';}
-    settingsBtn.addEventListener('click',()=> (settingsPanel.style.display==='block'?closeSettings():openSettings()));
-    settingsOverlay.addEventListener('click',closeSettings);closeSettingsBtn.addEventListener('click',closeSettings);
+    const cube = document.getElementById("cube");
+    const toggleButton = document.getElementById("toggleButton");
 
-    /* ===== Farben: speichern / anwenden ===== */
-    const mapping={hours:"chipHours",minutes:"chipMinutes",seconds:"chipSeconds",year:"chipYear",month:"chipMonth",day:"chipDay",cube:"chipCube",background:"chipBackground"};
-    const defaults={hours:"#e71f1b",minutes:"#ff8c42",seconds:"#fff275",year:"#4B0082",month:"#2f4fba",day:"#87c8fa",cube:"#111111",background:"#000000"};
-    function setChipColor(key,val){document.getElementById(mapping[key]).style.setProperty('--chip',val);}
-    function applyColor(key,val){
-      if(key==='cube'){document.querySelectorAll('.face').forEach(f=>f.style.background=val);}
-      else if(key==='background'){document.body.style.background=val;}
-      else{document.getElementById(key).style.color=val;}
-      localStorage.setItem('color-'+key,val);setChipColor(key,val);
-    }
-    function applySavedColors(){Object.keys(mapping).forEach(k=>applyColor(k, localStorage.getItem('color-'+k)||defaults[k]));}
-    function resetToDefaultColors(){Object.keys(mapping).forEach(k=>localStorage.removeItem('color-'+k));applySavedColors();}
-    window.addEventListener('load',()=>{if(!localStorage.getItem('visitedBefore')){localStorage.setItem('visitedBefore','true');resetToDefaultColors();}else{applySavedColors();}});
-    btnDefaults.addEventListener('click',resetToDefaultColors);
-
-    /* ====== RGB Picker ====== */
-    const pickerOverlay=document.getElementById('pickerOverlay');
-    const picker=document.getElementById('picker');
-    const sv=document.getElementById('sv'); const svc=document.getElementById('svc');
-    const h=document.getElementById('h'); const preview=document.getElementById('preview');
-    const Rin=document.getElementById('r'), Gin=document.getElementById('g'), Bin=document.getElementById('b');
-    let currentKey=null, hue=0, sat=1, val=1; // HSV
-
-    // Helper: RGB/HSV/HEX
-    function hsv2rgb(h,s,v){let f=(n,k=(n+h/60)%6)=>v-v*s*Math.max(Math.min(k,4-k,1),0);return [f(5),f(3),f(1)].map(x=>Math.round(x*255));}
-    function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,v=max;const d=max-min;s=max===0?0:d/max;
-      if(max===min){h=0}else{switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}h*=60}
-      return [h,s,v]}
-    const toHex=n=>('#'+[n[0],n[1],n[2]].map(x=>x.toString(16).padStart(2,'0')).join(''));
-
-    // SV Fläche zeichnen (bei Hue Änderung)
-    function drawSV(){
-      const ctx=sv.getContext('2d'), w=sv.width, hgt=sv.height;
-      const [r,g,b]=hsv2rgb(hue,1,1);
-      // Füllfarbe Hue
-      ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.fillRect(0,0,w,hgt);
-      // Weißverlauf (links->rechts Sättigung)
-      const grdW=ctx.createLinearGradient(0,0,w,0); grdW.addColorStop(0,'#fff'); grdW.addColorStop(1,'transparent'); ctx.fillStyle=grdW; ctx.fillRect(0,0,w,hgt);
-      // Schwarzverlauf (oben->unten Value)
-      const grdB=ctx.createLinearGradient(0,0,0,hgt); grdB.addColorStop(0,'transparent'); grdB.addColorStop(1,'#000'); ctx.fillStyle=grdB; ctx.fillRect(0,0,w,hgt);
-      // Cursor positionieren
-      svc.style.left = (sat * w - svc.offsetWidth/2)+'px';
-      svc.style.top  = ((1-val) * hgt - svc.offsetHeight/2)+'px';
+    function updateTime() {
+      const now = new Date();
+      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+      document.getElementById("hours").textContent = String(now.getHours()).padStart(2,'0');
+      document.getElementById("minutes").textContent = String(now.getMinutes()).padStart(2,'0');
+      document.getElementById("seconds").textContent = String(now.getSeconds()).padStart(2,'0');
+      document.getElementById("year").textContent = String(now.getFullYear() % 100).padStart(2,'0');
+      document.getElementById("month").textContent = monthNames[now.getMonth()];
+      document.getElementById("day").textContent = String(now.getDate()).padStart(2,'0');
     }
 
-    function setFromHSV(hh,ss,vv){hue=hh; sat=Math.min(1,Math.max(0,ss)); val=Math.min(1,Math.max(0,vv));
-      const [r,g,b]=hsv2rgb(hue,sat,val);
-      preview.style.background=`rgb(${r},${g},${b})`;
-      Rin.value=r; Gin.value=g; Bin.value=b;
-      drawSV();
-    }
-    function setFromRGB(r,g,b){
-      r=Math.min(255,Math.max(0,+r|0)); g=Math.min(255,Math.max(0,+g|0)); b=Math.min(255,Math.max(0,+b|0));
-      const hsv=rgb2hsv(r,g,b); hue=hsv[0]; sat=hsv[1]; val=hsv[2];
-      h.value=Math.round(hue); preview.style.background=`rgb(${r},${g},${b})`;
-      Rin.value=r; Gin.value=g; Bin.value=b; drawSV();
+    function toggleCube() {
+      toggleCount++;
+      if (toggleCount >= 2) toggleButton.style.display = "none";
+      showingDate = !showingDate;
+      rotateX = showingDate ? -215 : -30;
+      rotateY = 45;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     }
 
-    // Öffnen/Schließen
+    function resetToClockView() {
+      if (showingDate || userRotated) {
+        showingDate = false;
+        userRotated = false;
+        rotateX = -30;
+        rotateY = 45;
+        cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      }
+    }
+    function startInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(resetToClockView, 10000);
+    }
+
+    cube.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    document.addEventListener("mouseup", () => { isDragging = false; });
+    document.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      rotateY += dx * 0.5; rotateX -= dy * 0.5;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      userRotated = true; startInactivityTimer();
+    });
+
+    // Touch (unverändert)
+    document.body.addEventListener("touchstart", (e) => {
+      const t = e.touches[0];
+      lastX = t.clientX; lastY = t.clientY;
+    });
+    document.body.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      const dx = t.clientX - lastX;
+      const dy = t.clientY - lastY;
+      lastX = t.clientX; lastY = t.clientY;
+      rotateY += dx * 1; rotateX -= dy * 1;
+      cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      userRotated = true; startInactivityTimer();
+    }, { passive:false });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.target.matches('button, input, textarea')) {
+        e.preventDefault(); toggleCube();
+      }
+    });
+
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    /* ============ Settings: State & Farben ============ */
+    const namesMap = {
+      hours:'Hour', minutes:'Minute', seconds:'Second',
+      year:'Year', month:'Month', day:'Day',
+      edge:'Cube edge', bg:'Background'
+    };
+
+    const colorVars = {
+      hours:   '--c-hours',
+      minutes: '--c-mins',
+      seconds: '--c-secs',
+      year:    '--c-year',
+      month:   '--c-month',
+      day:     '--c-day',
+      edge:    '--c-cubeedge',
+      bg:      '--c-bg'
+    };
+
+    const defaultColors = {
+      hours:'#e71f1b', minutes:'#ff8c42', seconds:'#fff275',
+      year:'#4B0082', month:'#2f4fba', day:'#87c8fa',
+      edge:'#555555', bg:'#000000'
+    };
+
+    function applyColor(key, hex){
+      document.documentElement.style.setProperty(colorVars[key], hex);
+      // spezielle Ziele zusätzlich
+      if (key==='edge'){
+        document.querySelectorAll('.face').forEach(f=>f.style.borderColor = hex);
+      }
+      if (key==='bg'){
+        document.body.style.background = hex;
+      }
+      // Swatch füllen + speichern
+      document.getElementById('sw_'+key).style.background = hex;
+      saveColors();
+    }
+
+    function loadColors(){
+      const saved = JSON.parse(localStorage.getItem('cube_colors') || '{}');
+      const cfg = Object.assign({}, defaultColors, saved);
+      Object.keys(cfg).forEach(k => applyColor(k, cfg[k]));
+    }
+    function saveColors(){
+      const obj = {};
+      Object.keys(defaultColors).forEach(k=>{
+        obj[k] = getComputedStyle(document.documentElement).getPropertyValue(colorVars[k]).trim() || defaultColors[k];
+      });
+      localStorage.setItem('cube_colors', JSON.stringify(obj));
+    }
+
+    /* ============ Settings UI Steuerung ============ */
+    const gearBtn = document.getElementById('gearBtn');
+    const settings = document.getElementById('settings');
+    document.getElementById('btnClose').onclick = ()=> settings.classList.remove('show');
+    gearBtn.onclick = ()=> settings.classList.toggle('show');
+    document.getElementById('btnDefaults').onclick = ()=>{
+      Object.entries(defaultColors).forEach(([k,v])=>applyColor(k,v));
+    };
+    document.getElementById('btnToggle').onclick = ()=> toggleCube();
+
+    // Swatches klickbar
+    ['hours','minutes','seconds','year','month','day','edge','bg'].forEach(key=>{
+      document.getElementById('sw_'+key).onclick = ()=> openPicker(key);
+    });
+
+    /* ============ RGB Picker Logik ============ */
+    const picker = document.getElementById('picker');
+    const pickTitle = document.getElementById('pickTitle');
+    const svBox = document.getElementById('svBox');
+    const svCursor = document.getElementById('svCursor');
+    const hue = document.getElementById('hue');
+    const hueCursor = document.getElementById('hueCursor');
+    const preview = document.getElementById('preview');
+    const rIn = document.getElementById('rIn');
+    const gIn = document.getElementById('gIn');
+    const bIn = document.getElementById('bIn');
+    const btnCancel = document.getElementById('btnCancel');
+    const btnApply  = document.getElementById('btnApply');
+
+    let currentKey = null;
+    let H=0, S=1, V=1; // HSV intern
+
+    function hexToRgb(hex){
+      hex = hex.replace('#','');
+      if (hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+      const num = parseInt(hex,16);
+      return {r:(num>>16)&255, g:(num>>8)&255, b:(num)&255};
+    }
+    function rgbToHex(r,g,b){
+      return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+    }
+    function rgbToHsv(r,g,b){
+      r/=255; g/=255; b/=255;
+      const max = Math.max(r,g,b), min = Math.min(r,g,b);
+      const d = max-min;
+      let h=0;
+      if(d!==0){
+        switch(max){
+          case r: h = (g-b)/d + (g<b?6:0); break;
+          case g: h = (b-r)/d + 2; break;
+          case b: h = (r-g)/d + 4; break;
+        }
+        h/=6;
+      }
+      const s = max===0?0:d/max;
+      const v = max;
+      return {h,s,v};
+    }
+    function hsvToRgb(h,s,v){
+      let r,g,b;
+      let i = Math.floor(h*6);
+      let f = h*6 - i;
+      let p = v*(1-s);
+      let q = v*(1-f*s);
+      let t = v*(1-(1-f)*s);
+      switch(i%6){
+        case 0: r=v,g=t,b=p; break;
+        case 1: r=q,g=v,b=p; break;
+        case 2: r=p,g=v,b=t; break;
+        case 3: r=p,g=q,b=v; break;
+        case 4: r=t,g=p,b=v; break;
+        case 5: r=v,g=p,b=q; break;
+      }
+      return {r:Math.round(r*255),g:Math.round(g*255),b:Math.round(b*255)};
+    }
+
+    function setHueBackground(){
+      // Basisfarbe für SV-Box (volle Sättigung/Value)
+      const {r,g,b} = hsvToRgb(H,1,1);
+      svBox.style.background = `rgb(${r},${g},${b})`;
+    }
+    function refreshPreview(){
+      const {r,g,b} = hsvToRgb(H,S,V);
+      preview.style.background = `rgb(${r},${g},${b})`;
+      rIn.value = r; gIn.value = g; bIn.value = b;
+    }
+
     function openPicker(key){
-      currentKey=key;
-      const col = localStorage.getItem('color-'+key) || defaults[key];
-      // hex -> rgb
-      const r=parseInt(col.slice(1,3),16), g=parseInt(col.slice(3,5),16), b=parseInt(col.slice(5,7),16);
-      setFromRGB(r,g,b);
-      pickerOverlay.style.display='block'; picker.style.display='block';
-      // Canvas Größe an Container anpassen
-      const rect=picker.getBoundingClientRect(); sv.width = Math.floor(rect.width-28); sv.height=180; drawSV();
+      currentKey = key;
+      // Name + Titelwort
+      pickTitle.textContent = `${namesMap[key] || 'Color'} – ${PICKER_TITLE}`;
+
+      // aktuelle Farbe lesen
+      const hex = getComputedStyle(document.documentElement).getPropertyValue(colorVars[key]).trim() || defaultColors[key];
+      const {r,g,b} = hexToRgb(hex);
+      const hsv = rgbToHsv(r,g,b);
+      H = hsv.h; S = hsv.s; V = hsv.v;
+
+      // UI positionieren
+      setHueBackground();
+      hueCursor.style.left = `${H*100}%`;
+      svCursor.style.left = `${S*100}%`;
+      svCursor.style.top  = `${(1-V)*100}%`;
+      refreshPreview();
+
+      picker.classList.add('show');
     }
-    function closePicker(){pickerOverlay.style.display='none'; picker.style.display='none'; currentKey=null;}
-    pickerOverlay.addEventListener('click',closePicker);
-    document.getElementById('cancelPick').addEventListener('click',closePicker);
 
-    // Hue Slider
-    h.addEventListener('input',()=> setFromHSV(+h.value, sat, val));
+    function closePicker(){ picker.classList.remove('show'); }
 
-    // RGB Inputs
-    Rin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
-    Gin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
-    Bin.addEventListener('input',()=> setFromRGB(Rin.value,Gin.value,Bin.value));
+    // SV drag
+    let svDragging=false;
+    svBox.addEventListener('mousedown', e=>{
+      svDragging=true; updateSV(e);
+    });
+    document.addEventListener('mouseup', ()=> svDragging=false);
+    svBox.addEventListener('mousemove', e=> { if(svDragging) updateSV(e); });
 
-    // SV interaktiv (mouse + touch)
-    function handleSV(clientX,clientY){
-      const r=sv.getBoundingClientRect();
-      const x=Math.min(Math.max(clientX-r.left,0),r.width);
-      const y=Math.min(Math.max(clientY-r.top,0),r.height);
-      const s=x/r.width, v=1-y/r.height;
-      setFromHSV(hue,s,v);
+    svBox.addEventListener('touchstart', e=>{
+      svDragging=true; updateSV(e.touches[0]); 
+    }, {passive:false});
+    svBox.addEventListener('touchmove', e=>{
+      if(!svDragging) return; e.preventDefault(); updateSV(e.touches[0]);
+    }, {passive:false});
+    document.addEventListener('touchend', ()=> svDragging=false);
+
+    function updateSV(e){
+      const rect = svBox.getBoundingClientRect();
+      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width);
+      const y = Math.min(Math.max(0, e.clientY - rect.top),  rect.height);
+      S = x/rect.width;
+      V = 1 - y/rect.height;
+      svCursor.style.left = `${S*100}%`;
+      svCursor.style.top  = `${(1-V)*100}%`;
+      refreshPreview();
     }
-    let svDrag=false;
-    sv.addEventListener('mousedown',e=>{svDrag=true;handleSV(e.clientX,e.clientY)});
-    document.addEventListener('mousemove',e=>{if(svDrag) handleSV(e.clientX,e.clientY)});
-    document.addEventListener('mouseup',()=>svDrag=false);
-    sv.addEventListener('touchstart',e=>{svDrag=true;handleSV(e.touches[0].clientX,e.touches[0].clientY)},{passive:false});
-    sv.addEventListener('touchmove',e=>{if(svDrag){e.preventDefault();handleSV(e.touches[0].clientX,e.touches[0].clientY)}},{passive:false});
-    sv.addEventListener('touchend',()=>svDrag=false);
 
-    // Apply
-    document.getElementById('applyPick').addEventListener('click',()=>{
-      const rgb=`rgb(${Rin.value|0},${Gin.value|0},${Bin.value|0})`;
-      // in HEX speichern
-      const hex = toHex([Rin.value|0, Gin.value|0, Bin.value|0]);
+    // Hue drag
+    let hDragging=false;
+    hue.addEventListener('mousedown', e=>{ hDragging=true; updateHue(e); });
+    document.addEventListener('mouseup', ()=> hDragging=false);
+    hue.addEventListener('mousemove', e=>{ if(hDragging) updateHue(e); });
+
+    hue.addEventListener('touchstart', e=>{ hDragging=true; updateHue(e.touches[0]); }, {passive:false});
+    hue.addEventListener('touchmove', e=>{
+      if(!hDragging) return; e.preventDefault(); updateHue(e.touches[0]);
+    }, {passive:false});
+    document.addEventListener('touchend', ()=> hDragging=false);
+
+    function updateHue(e){
+      const rect = hue.getBoundingClientRect();
+      const x = Math.min(Math.max(0, e.clientX - rect.left), rect.width);
+      H = x/rect.width;
+      hueCursor.style.left = `${H*100}%`;
+      setHueBackground();
+      refreshPreview();
+    }
+
+    // RGB Inputs -> Farbe
+    function clamp255(n){ n = parseInt(n||0,10); return Math.max(0, Math.min(255, n)); }
+    [rIn,gIn,bIn].forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const r = clamp255(rIn.value), g = clamp255(gIn.value), b = clamp255(bIn.value);
+        const max = Math.max(r,g,b), min = Math.min(r,g,b);
+        // zurück nach HSV:
+        const {h,s,v} = rgbToHsv(r,g,b);
+        H=h; S=s; V=v;
+        hueCursor.style.left = `${H*100}%`;
+        setHueBackground();
+        svCursor.style.left = `${S*100}%`;
+        svCursor.style.top  = `${(1-V)*100}%`;
+        preview.style.background = `rgb(${r},${g},${b})`;
+      });
+    });
+
+    btnCancel.onclick = closePicker;
+    btnApply.onclick = ()=>{
+      const {r,g,b} = {r:clamp255(rIn.value), g:clamp255(gIn.value), b:clamp255(bIn.value)};
+      const hex = rgbToHex(r,g,b);
       applyColor(currentKey, hex);
       closePicker();
-    });
+    };
 
-    // Chips klickbar
-    Object.keys(mapping).forEach(k=>{
-      document.getElementById(mapping[k]).addEventListener('click',()=>openPicker(k));
-    });
+    // Init
+    loadColors();
   </script>
 </body>
 </html>
