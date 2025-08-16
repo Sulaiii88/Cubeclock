@@ -500,6 +500,27 @@
       setChipColor(key,val);
     }
 
+
+    else if(key==='background'){
+  document.body.style.background = val;
+
+  // Hintergrundfarbe prüfen → Helligkeit berechnen
+  const r = parseInt(val.substr(1,2),16);
+  const g = parseInt(val.substr(3,2),16);
+  const b = parseInt(val.substr(5,2),16);
+
+  const brightness = 0.299*r + 0.587*g + 0.114*b;
+
+  // Wenn Hintergrund sehr dunkel ist → Zahnrad nicht verschwinden lassen
+  if (brightness < 40) {
+    settingsBtn.style.background = "#222";  // fix grau
+  } else {
+    settingsBtn.style.background = val;     // gleiche Farbe wie Hintergrund
+  }
+
+  settingsBtn.style.borderColor = 'rgba(255,255,255,.35)';
+    }
+    
     // Lädt gespeicherte Farben oder nimmt Defaults
     function applySavedColors(){
       Object.keys(mapping).forEach(k=>applyColor(k, localStorage.getItem('color-'+k)||defaults[k]));
@@ -678,3 +699,4 @@
   </script>
 </body>
 </html>
+
